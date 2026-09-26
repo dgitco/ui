@@ -1,0 +1,14 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "segmented",
+  "title": "Segmented",
+  "description": "Two or three choices in one small pill.",
+  "files": [
+    {
+      "path": "registry/dgit/ui/segmented.tsx",
+      "content": "import { cn } from \"@/lib/utils\";\n\n/** Two or three choices as one small pill; the chosen one is filled. */\nexport function Segmented<T extends string>({\n  value,\n  options,\n  onChange,\n  disabled,\n  label,\n  className,\n}: {\n  value: T;\n  options: readonly { value: T; label: string }[];\n  onChange: (next: T) => void;\n  disabled?: boolean;\n  label?: string;\n  className?: string;\n}) {\n  return (\n    <div className={cn(\"flex w-fit rounded-full border p-0.5 text-xs\", className)} role=\"radiogroup\" aria-label={label}>\n      {options.map((o) => (\n        <button\n          key={o.value}\n          type=\"button\"\n          role=\"radio\"\n          aria-checked={value === o.value}\n          disabled={disabled}\n          onClick={() => onChange(o.value)}\n          className={cn(\n            \"cursor-pointer rounded-full px-2.5 py-1 transition-colors disabled:cursor-default\",\n            value === o.value ? \"bg-foreground text-background\" : \"text-muted-foreground hover:text-foreground\",\n          )}\n        >\n          {o.label}\n        </button>\n      ))}\n    </div>\n  );\n}\n",
+      "type": "registry:ui"
+    }
+  ],
+  "type": "registry:ui"
+}

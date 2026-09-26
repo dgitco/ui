@@ -1,0 +1,20 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "copy",
+  "title": "Copy",
+  "description": "CopyButton and CopyField (a monospace value with a copy button).",
+  "dependencies": [
+    "lucide-react"
+  ],
+  "registryDependencies": [
+    "@dgit/button"
+  ],
+  "files": [
+    {
+      "path": "registry/dgit/ui/copy.tsx",
+      "content": "import { useEffect, useState } from \"react\";\nimport { Check, Copy } from \"lucide-react\";\nimport { Button } from \"@/registry/dgit/ui/button\";\nimport { cn } from \"@/lib/utils\";\n\nexport function CopyButton({ text, label = \"Copy\", className }: { text: string; label?: string; className?: string }) {\n  const [copied, setCopied] = useState(false);\n  useEffect(() => {\n    if (!copied) return;\n    const t = setTimeout(() => setCopied(false), 1500);\n    return () => clearTimeout(t);\n  }, [copied]);\n  return (\n    <Button\n      type=\"button\"\n      variant=\"ghost\"\n      size=\"icon-sm\"\n      className={cn(\"text-muted-foreground hover:text-foreground\", className)}\n      aria-label={copied ? \"Copied\" : label}\n      title={copied ? \"Copied\" : label}\n      onClick={() => navigator.clipboard.writeText(text).then(() => setCopied(true))}\n    >\n      {copied ? <Check /> : <Copy />}\n    </Button>\n  );\n}\n\n/** A monospace value (URL, command, token) with a copy button. */\nexport function CopyField({ value, multiline, className }: { value: string; multiline?: boolean; className?: string }) {\n  return (\n    <div className={cn(\"flex items-start gap-2 rounded-2xl border bg-muted/40 py-1.5 pr-1.5 pl-4\", className)}>\n      <pre className={cn(\"min-w-0 flex-1 py-1 font-mono text-[13px] leading-6\", multiline ? \"whitespace-pre-wrap [overflow-wrap:anywhere]\" : \"truncate\")}>{value}</pre>\n      <CopyButton text={value} />\n    </div>\n  );\n}\n",
+      "type": "registry:ui"
+    }
+  ],
+  "type": "registry:ui"
+}

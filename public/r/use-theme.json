@@ -1,0 +1,14 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "use-theme",
+  "title": "useTheme",
+  "description": "System, light or dark, kept in localStorage and applied as <html data-theme>. Includes the first-paint script.",
+  "files": [
+    {
+      "path": "registry/dgit/lib/theme.ts",
+      "content": "import { useEffect, useState } from \"react\";\n\n/**\n * Light, dark, or following the system. The choice is kept in localStorage and applied as\n * `<html data-theme=\"light|dark\">`, which dgit.css reads. Put `themeScript` in <head> so the\n * first paint already has the right theme.\n */\nexport type ThemeChoice = \"system\" | \"light\" | \"dark\";\n\nexport const THEME_KEY = \"dgit-theme\";\n\n/** Inline in <head> (before styles paint): applies a stored choice; \"system\" leaves it to CSS. */\nexport const themeScript = `try{var t=localStorage.getItem(\"${THEME_KEY}\");if(t===\"light\"||t===\"dark\")document.documentElement.dataset.theme=t}catch(e){}`;\n\nfunction readChoice(): ThemeChoice {\n  try {\n    const v = localStorage.getItem(THEME_KEY);\n    return v === \"light\" || v === \"dark\" ? v : \"system\";\n  } catch {\n    return \"system\";\n  }\n}\n\nexport function applyTheme(choice: ThemeChoice): void {\n  const root = document.documentElement;\n  if (choice === \"system\") delete root.dataset.theme;\n  else root.dataset.theme = choice;\n  try {\n    if (choice === \"system\") localStorage.removeItem(THEME_KEY);\n    else localStorage.setItem(THEME_KEY, choice);\n  } catch {}\n}\n\nexport function useTheme(): [ThemeChoice, (next: ThemeChoice) => void] {\n  const [choice, setChoice] = useState<ThemeChoice>(() => (typeof window === \"undefined\" ? \"system\" : readChoice()));\n  useEffect(() => applyTheme(choice), [choice]);\n  return [choice, setChoice];\n}\n",
+      "type": "registry:lib"
+    }
+  ],
+  "type": "registry:lib"
+}

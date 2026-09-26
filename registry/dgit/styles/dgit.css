@@ -1,0 +1,277 @@
+/*
+ * DGIT UI theme. Import it after Tailwind in the app's main CSS:
+ *
+ *   @import "tailwindcss";
+ *   @import "./dgit.css";
+ *
+ * Two layers of names, one source of color:
+ *  - a neutral gray scale (gray-100…gray-1000, background-100/200, gray-alpha-100…600) in the
+ *    Geist style: values from the Geist design language as measured on vercel.com, 2026-09-21;
+ *  - shadcn's semantic names (background, foreground, muted, border, …) pointed at that scale,
+ *    so stock shadcn components match.
+ *
+ * Theme: `<html data-theme="light|dark">` picks one (lib/theme.ts sets it); without the attribute
+ * the system setting decides. Fonts aren't loaded here: load Geist and Geist Mono (the `geist`
+ * npm package or Google Fonts), and Pretendard for Korean if needed.
+ */
+
+:root {
+  color-scheme: light dark;
+
+  --dgit-gray-100: 0, 0%, 95%;
+  --dgit-gray-200: 0, 0%, 92%;
+  --dgit-gray-300: 0, 0%, 90%;
+  --dgit-gray-400: 0, 0%, 92%;
+  --dgit-gray-500: 0, 0%, 79%;
+  --dgit-gray-600: 0, 0%, 66%;
+  --dgit-gray-700: 0, 0%, 56%;
+  --dgit-gray-800: 0, 0%, 49%;
+  --dgit-gray-900: 0, 0%, 30%;
+  --dgit-gray-1000: 0, 0%, 9%;
+  --dgit-background-100: 0, 0%, 100%;
+  --dgit-background-200: 0, 0%, 98%;
+
+  --dgit-gray-alpha-100: #0000000d;
+  --dgit-gray-alpha-200: #00000014;
+  --dgit-gray-alpha-300: #0000001a;
+  --dgit-gray-alpha-400: #00000014;
+  --dgit-gray-alpha-500: #00000036;
+  --dgit-gray-alpha-600: #00000057;
+
+  --dgit-blue: oklch(57.61% 0.2508 258.23);
+  --dgit-green: oklch(51.75% 0.1453 147.65);
+  --dgit-green-bg: oklch(96.92% 0.037 147.15);
+  --dgit-amber: oklch(52.79% 0.1496 54.65);
+  --dgit-amber-bg: oklch(96.81% 0.0495 90.2423);
+  --dgit-red: oklch(54.99% 0.232 25.29);
+  --dgit-red-bg: oklch(95.41% 0.0299 14.2526);
+
+  /* A card that sits on the page: 1px edge, a 2px drop, a ring in the page color. */
+  --dgit-shadow-card: 0 0 0 1px rgba(0, 0, 0, 0.08), 0 2px 2px 0 rgba(0, 0, 0, 0.04), 0 0 0 1px hsla(var(--dgit-background-200), 1);
+  /* A floating panel (menus, popovers). */
+  --dgit-shadow-menu:
+    0 0 0 1px rgba(0, 0, 0, 0.08), 0 1px 1px 0 rgba(0, 0, 0, 0.02), 0 8px 16px -4px rgba(0, 0, 0, 0.04),
+    0 24px 32px -8px rgba(0, 0, 0, 0.06), 0 0 0 1px hsla(var(--dgit-background-200), 1);
+
+  --radius: 0.875rem;
+}
+
+/* Light or dark, chosen explicitly… */
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --dgit-gray-100: 0, 0%, 10%;
+  --dgit-gray-200: 0, 0%, 12%;
+  --dgit-gray-300: 0, 0%, 16%;
+  --dgit-gray-400: 0, 0%, 18%;
+  --dgit-gray-500: 0, 0%, 27%;
+  --dgit-gray-600: 0, 0%, 53%;
+  --dgit-gray-700: 0, 0%, 56%;
+  --dgit-gray-800: 0, 0%, 49%;
+  --dgit-gray-900: 0, 0%, 63%;
+  --dgit-gray-1000: 0, 0%, 93%;
+  --dgit-background-100: 0, 0%, 4%;
+  --dgit-background-200: 0, 0%, 0%;
+  --dgit-gray-alpha-100: #ffffff0f;
+  --dgit-gray-alpha-200: #ffffff17;
+  --dgit-gray-alpha-300: #ffffff21;
+  --dgit-gray-alpha-400: #ffffff24;
+  --dgit-gray-alpha-500: #ffffff3d;
+  --dgit-gray-alpha-600: #ffffff82;
+  --dgit-green: oklch(73.1% 0.19 150);
+  --dgit-green-bg: oklch(25% 0.05 150);
+  --dgit-amber: oklch(82% 0.15 80);
+  --dgit-amber-bg: oklch(24% 0.04 75);
+  --dgit-red: oklch(70% 0.19 22);
+  --dgit-red-bg: oklch(25% 0.05 20);
+  --dgit-shadow-card: 0 0 0 1px var(--dgit-gray-alpha-400), 0 2px 2px 0 rgba(0, 0, 0, 0.16);
+  --dgit-shadow-menu: 0 0 0 1px var(--dgit-gray-alpha-400), 0 8px 16px -4px rgba(0, 0, 0, 0.32), 0 24px 32px -8px rgba(0, 0, 0, 0.4);
+}
+
+/* …or by the system when nothing was chosen (same values as above). */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --dgit-gray-100: 0, 0%, 10%;
+    --dgit-gray-200: 0, 0%, 12%;
+    --dgit-gray-300: 0, 0%, 16%;
+    --dgit-gray-400: 0, 0%, 18%;
+    --dgit-gray-500: 0, 0%, 27%;
+    --dgit-gray-600: 0, 0%, 53%;
+    --dgit-gray-700: 0, 0%, 56%;
+    --dgit-gray-800: 0, 0%, 49%;
+    --dgit-gray-900: 0, 0%, 63%;
+    --dgit-gray-1000: 0, 0%, 93%;
+    --dgit-background-100: 0, 0%, 4%;
+    --dgit-background-200: 0, 0%, 0%;
+    --dgit-gray-alpha-100: #ffffff0f;
+    --dgit-gray-alpha-200: #ffffff17;
+    --dgit-gray-alpha-300: #ffffff21;
+    --dgit-gray-alpha-400: #ffffff24;
+    --dgit-gray-alpha-500: #ffffff3d;
+    --dgit-gray-alpha-600: #ffffff82;
+    --dgit-green: oklch(73.1% 0.19 150);
+    --dgit-green-bg: oklch(25% 0.05 150);
+    --dgit-amber: oklch(82% 0.15 80);
+    --dgit-amber-bg: oklch(24% 0.04 75);
+    --dgit-red: oklch(70% 0.19 22);
+    --dgit-red-bg: oklch(25% 0.05 20);
+    --dgit-shadow-card: 0 0 0 1px var(--dgit-gray-alpha-400), 0 2px 2px 0 rgba(0, 0, 0, 0.16);
+    --dgit-shadow-menu: 0 0 0 1px var(--dgit-gray-alpha-400), 0 8px 16px -4px rgba(0, 0, 0, 0.32), 0 24px 32px -8px rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* shadcn's names, on the scale above. */
+:root {
+  --background: hsla(var(--dgit-background-100), 1);
+  --foreground: hsla(var(--dgit-gray-1000), 1);
+  --card: hsla(var(--dgit-background-100), 1);
+  --card-foreground: hsla(var(--dgit-gray-1000), 1);
+  --popover: hsla(var(--dgit-background-100), 1);
+  --popover-foreground: hsla(var(--dgit-gray-1000), 1);
+  --primary: hsla(var(--dgit-gray-1000), 1);
+  --primary-foreground: hsla(var(--dgit-background-100), 1);
+  --secondary: hsla(var(--dgit-gray-100), 1);
+  --secondary-foreground: hsla(var(--dgit-gray-1000), 1);
+  --muted: hsla(var(--dgit-gray-100), 1);
+  --muted-foreground: hsla(var(--dgit-gray-900), 1);
+  --accent: hsla(var(--dgit-gray-100), 1);
+  --accent-foreground: hsla(var(--dgit-gray-1000), 1);
+  --destructive: var(--dgit-red);
+  --border: hsla(var(--dgit-gray-300), 1);
+  --input: hsla(var(--dgit-gray-300), 1);
+  --ring: hsla(var(--dgit-gray-1000), 1);
+  --warn: var(--dgit-amber);
+  --warn-bg: var(--dgit-amber-bg);
+  --ok: var(--dgit-green);
+}
+
+@theme inline {
+  --font-sans: "Geist", "Geist Sans", "Pretendard", ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Apple SD Gothic Neo", sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace, "Pretendard";
+
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 4px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-warn: var(--warn);
+  --color-warn-bg: var(--warn-bg);
+  --color-ok: var(--ok);
+
+  /* The gray scale by name: hover:bg-gray-100, text-gray-900, bg-background-200, … */
+  --color-gray-100: hsla(var(--dgit-gray-100), 1);
+  --color-gray-200: hsla(var(--dgit-gray-200), 1);
+  --color-gray-300: hsla(var(--dgit-gray-300), 1);
+  --color-gray-400: hsla(var(--dgit-gray-400), 1);
+  --color-gray-500: hsla(var(--dgit-gray-500), 1);
+  --color-gray-600: hsla(var(--dgit-gray-600), 1);
+  --color-gray-700: hsla(var(--dgit-gray-700), 1);
+  --color-gray-800: hsla(var(--dgit-gray-800), 1);
+  --color-gray-900: hsla(var(--dgit-gray-900), 1);
+  --color-gray-1000: hsla(var(--dgit-gray-1000), 1);
+  --color-background-100: hsla(var(--dgit-background-100), 1);
+  --color-background-200: hsla(var(--dgit-background-200), 1);
+  --color-gray-alpha-100: var(--dgit-gray-alpha-100);
+  --color-gray-alpha-200: var(--dgit-gray-alpha-200);
+  --color-gray-alpha-300: var(--dgit-gray-alpha-300);
+  --color-gray-alpha-400: var(--dgit-gray-alpha-400);
+  --color-gray-alpha-500: var(--dgit-gray-alpha-500);
+  --color-gray-alpha-600: var(--dgit-gray-alpha-600);
+
+  --shadow-card: var(--dgit-shadow-card);
+  --shadow-menu: var(--dgit-shadow-menu);
+
+  /* Type scale: heading (600, tight), label and copy (400), button (500). */
+  --text-heading-14: 14px;
+  --text-heading-14--line-height: 20px;
+  --text-heading-14--letter-spacing: -0.28px;
+  --text-heading-14--font-weight: 600;
+  --text-heading-16: 16px;
+  --text-heading-16--line-height: 24px;
+  --text-heading-16--letter-spacing: -0.32px;
+  --text-heading-16--font-weight: 600;
+  --text-heading-20: 20px;
+  --text-heading-20--line-height: 26px;
+  --text-heading-20--letter-spacing: -0.4px;
+  --text-heading-20--font-weight: 600;
+  --text-heading-24: 24px;
+  --text-heading-24--line-height: 32px;
+  --text-heading-24--letter-spacing: -0.96px;
+  --text-heading-24--font-weight: 600;
+  --text-heading-30: 30px;
+  --text-heading-30--line-height: 36px;
+  --text-heading-30--letter-spacing: -0.75px;
+  --text-heading-30--font-weight: 500;
+  --text-label-12: 12px;
+  --text-label-12--line-height: 16px;
+  --text-label-13: 13px;
+  --text-label-13--line-height: 18px;
+  --text-label-14: 14px;
+  --text-label-14--line-height: 20px;
+  --text-copy-13: 13px;
+  --text-copy-13--line-height: 18px;
+  --text-copy-14: 14px;
+  --text-copy-14--line-height: 20px;
+  --text-copy-15: 15px;
+  --text-copy-15--line-height: 22px;
+  --text-button-14: 14px;
+  --text-button-14--line-height: 20px;
+  --text-button-14--font-weight: 500;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html,
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+  body {
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* Menus grow from where they were opened: 120 ms, just long enough to follow. */
+@keyframes dgit-menu-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@utility animate-menu {
+  animation: dgit-menu-in 120ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-menu {
+    animation: none;
+  }
+}

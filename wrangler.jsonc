@@ -1,0 +1,9 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // The site and the registry (/r/<item>.json), static, on the DGit account.
+  "name": "dgit-ui",
+  "account_id": "a94e720e299d085a43f09d5ee6dddf74",
+  "compatibility_date": "2026-09-01",
+  "assets": { "directory": "./dist", "not_found_handling": "single-page-application" },
+  "routes": [{ "pattern": "ui.dgit.co", "custom_domain": true }]
+}
