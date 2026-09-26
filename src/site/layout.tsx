@@ -2,12 +2,13 @@ import { Link, NavLink, Outlet, ScrollRestoration } from "react-router";
 import { ThemeSwitch } from "@/registry/dgit/ui/account-menu";
 import { navPill } from "@/registry/dgit/blocks/app-header";
 import { useTheme } from "@/registry/dgit/lib/theme";
+import { DGitChip } from "./mark";
 
 export function Wordmark({ className = "" }: { className?: string }) {
   return (
     <Link to="/" className={`flex items-center gap-2 font-mono text-[15px] font-semibold tracking-[-0.3px] text-foreground no-underline ${className}`}>
-      <span className="grid size-7 place-content-center rounded-lg bg-foreground text-[12px] text-background">d/</span>
-      DGIT UI
+      <DGitChip />
+      DGit UI
     </Link>
   );
 }
@@ -38,7 +39,7 @@ export function Layout() {
       </main>
       <footer className="border-t">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-6 text-copy-13 text-muted-foreground sm:px-6">
-          <span>DGIT UI · a shadcn registry for quiet, sharp interfaces.</span>
+          <span>DGit UI · a shadcn registry for quiet, sharp interfaces.</span>
           <span className="font-mono">npx shadcn add @dgit/…</span>
         </div>
       </footer>

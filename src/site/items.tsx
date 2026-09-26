@@ -9,6 +9,7 @@ import { Segmented } from "@/registry/dgit/ui/segmented";
 import { AppHeader, navPill } from "@/registry/dgit/blocks/app-header";
 import { AuthButton, AuthCodeField, AuthDivider, AuthField, AuthLayout, AuthNote, AuthTitle } from "@/registry/dgit/blocks/auth-page";
 import { useTheme } from "@/registry/dgit/lib/theme";
+import { DGitChip } from "./mark";
 
 export interface Item {
   name: string;
@@ -132,7 +133,7 @@ function HeaderDemo() {
   return (
     <div className="flex h-full flex-col bg-background">
       <AppHeader
-        brand={<span className="grid size-7 place-content-center rounded-lg bg-foreground font-mono text-[12px] font-semibold text-background">d/</span>}
+        brand={<DGitChip />}
         nav={["Overview", "Projects", "Usage", "Settings"].map((n) => (
           <button key={n} type="button" className={navPill(at === n) + " cursor-pointer border-0 bg-transparent"} onClick={() => setAt(n)}>
             {n}
@@ -160,7 +161,7 @@ function AuthDemo() {
   const [step, setStep] = useState<"choose" | "code">("choose");
   return (
     <AuthLayout
-      brand={<span className="grid size-7 place-content-center rounded-lg bg-foreground font-mono text-[12px] font-semibold text-background">d/</span>}
+      brand={<DGitChip />}
       app="Acme CLI"
       footer={<>One account for your tools. <a href="#">Terms</a> · <a href="#">Privacy</a></>}
     >

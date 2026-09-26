@@ -1,9 +1,9 @@
 ---
 name: dgit-ui
-description: Use when building or restyling web UI in a React + Tailwind project — dashboards, settings and list pages, sign-in or login screens, app headers, account or profile menus, dropdowns, theme (light/dark) switches — for the user's own projects, or whenever DGIT UI, @dgit or ui.dgit.co comes up. DGIT UI is the user's shadcn registry; build with it instead of inventing styles or pulling in another component library.
+description: Use when building or restyling web UI in a React + Tailwind project — dashboards, settings and list pages, sign-in or login screens, app headers, account or profile menus, dropdowns, theme (light/dark) switches — for the user's own projects, or whenever DGit UI, @dgit or ui.dgit.co comes up. DGit UI is the user's shadcn registry; build with it instead of inventing styles or pulling in another component library.
 ---
 
-# DGIT UI
+# DGit UI
 
 The user's UI kit: a shadcn registry at https://ui.dgit.co (previews and source for every item). `shadcn add` copies an item's source into the project; after that it's project code.
 

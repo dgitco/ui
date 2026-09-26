@@ -13,7 +13,7 @@ export function Docs() {
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
       <h1 className="text-heading-30 mb-2">Get started</h1>
       <p className="mb-10 text-muted-foreground">
-        DGIT UI is a shadcn registry: <code className="font-mono">shadcn add</code> copies the source into your project, so you own it and can change it. It expects a shadcn project (a <code className="font-mono">components.json</code> and <code className="font-mono">cn</code> in <code className="font-mono">lib/utils</code>) on Tailwind v4.
+        DGit UI is a shadcn registry: <code className="font-mono">shadcn add</code> copies the source into your project, so you own it and can change it. It expects a shadcn project (a <code className="font-mono">components.json</code> and <code className="font-mono">cn</code> in <code className="font-mono">lib/utils</code>) on Tailwind v4.
       </p>
 
       <h2 className="text-heading-20 mb-3">1. Add the registry</h2>
