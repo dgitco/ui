@@ -1,5 +1,6 @@
 // Serves the static site and registry, and counts registry fetches (/r/<item>.json) in D1.
-// The counts are private: nothing here serves them; read them from D1 (dgit-ui-stats) directly.
+// The counts are private: nothing here serves them. They go to the shared D1 dgit-stats
+// (product "ui"), read by a private dashboard.
 // `shadcn add` fetches an item and then each of its registry dependencies, so dependencies
 // (theme, use-theme) count once per install of anything that needs them.
 
@@ -26,7 +27,7 @@ export default {
       const client = ua.includes("Mozilla") ? "browser" : "cli";
       ctx.waitUntil(
         env.STATS.prepare(
-          "INSERT INTO installs (day, item, client, n) VALUES (?, ?, ?, 1) ON CONFLICT (day, item, client) DO UPDATE SET n = n + 1",
+          "INSERT INTO hits (day, product, item, client, n) VALUES (?, 'ui', ?, ?, 1) ON CONFLICT (day, product, item, client) DO UPDATE SET n = n + 1",
         )
           .bind(kstDay(), item, client)
           .run()

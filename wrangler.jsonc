@@ -13,7 +13,7 @@
     "run_worker_first": ["/r/*"]
   },
   "d1_databases": [
-    { "binding": "STATS", "database_name": "dgit-ui-stats", "database_id": "4e66fa89-e731-47eb-a7c9-1b0a6183276a" }
+    { "binding": "STATS", "database_name": "dgit-stats", "database_id": "19fcfe2a-bbd7-433c-8a00-967c7c600a2b" }
   ],
   "routes": [{ "pattern": "ui.dgit.co", "custom_domain": true }]
 }

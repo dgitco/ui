@@ -10,8 +10,7 @@
 | `registry.json` | 항목 목록. `bun run registry`가 `public/r/<항목>.json`으로 빌드 |
 | `skills/dgit-ui/SKILL.md` | 에이전트용 스킬. 빌드 때 `public/skill.md`로 복사되어 사이트에서 받을 수 있다 |
 | `src/` | 쇼케이스 사이트 (Vite + React + Tailwind v4). 미리보기는 `registry/` 원본을 그대로 쓴다 |
-| `worker/` | `/r/*`에서만 도는 워커. 레지스트리 요청 수를 D1 `dgit-ui-stats`에 날짜·항목별로 센다 (비공개, 사이트에는 안 나온다) |
-| `migrations/` | D1 스키마. `0b exec -- bunx wrangler d1 migrations apply dgit-ui-stats --remote` |
+| `worker/` | `/r/*`에서만 도는 워커. 레지스트리 요청 수를 날짜·항목별로 센다. 숫자는 비공개이고 사이트에는 안 나온다 |
 
 ## 프로젝트에서 쓰기
 
