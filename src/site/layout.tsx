@@ -39,7 +39,10 @@ export function Layout() {
       </main>
       <footer className="border-t">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-6 text-copy-13 text-muted-foreground sm:px-6">
-          <span>DGit UI · a shadcn registry for quiet, sharp interfaces.</span>
+          <span>
+            DGit UI · a shadcn registry for quiet, sharp interfaces. MIT ·{" "}
+            <a href="https://github.com/dgitco/ui" className="text-muted-foreground hover:text-foreground">GitHub</a>
+          </span>
           <span className="font-mono">npx shadcn add @dgit/…</span>
         </div>
       </footer>

@@ -1,7 +1,7 @@
 {
   "$schema": "https://ui.shadcn.com/schema/registry.json",
   "name": "dgit",
-  "homepage": "https://github.com/0bridge/0bridge/tree/main/packages/ui",
+  "homepage": "https://ui.dgit.co",
   "items": [
     {
       "name": "theme",

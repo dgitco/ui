@@ -1,9 +1,19 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  // The site and the registry (/r/<item>.json), static, on the DGit account.
+  // The site and the registry (/r/<item>.json), static, on the DGit account. The worker only runs
+  // for the registry (to count fetches, kept private in D1); everything else is served as a plain asset.
   "name": "dgit-ui",
   "account_id": "a94e720e299d085a43f09d5ee6dddf74",
   "compatibility_date": "2026-09-01",
-  "assets": { "directory": "./dist", "not_found_handling": "single-page-application" },
+  "main": "worker/index.ts",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/r/*"]
+  },
+  "d1_databases": [
+    { "binding": "STATS", "database_name": "dgit-ui-stats", "database_id": "4e66fa89-e731-47eb-a7c9-1b0a6183276a" }
+  ],
   "routes": [{ "pattern": "ui.dgit.co", "custom_domain": true }]
 }
