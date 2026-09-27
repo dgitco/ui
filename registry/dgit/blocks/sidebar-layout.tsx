@@ -317,7 +317,8 @@ export function ScopeSwitcher({
   current: { key: string; label: string } | null;
   items: { key: string; label: string; to: string; hint?: string }[];
   all?: { label: string; to: string };
-  extra?: ReactNode;
+  /** Rows under the list ("Create project"); a function gets `close` to shut the menu first. */
+  extra?: ReactNode | ((close: () => void) => ReactNode);
   link?: LinkRenderer;
   label?: string;
   icon?: ReactNode;
@@ -371,7 +372,7 @@ export function ScopeSwitcher({
           {extra && (
             <>
               <MenuSeparator />
-              {extra}
+              {typeof extra === "function" ? extra(close) : extra}
             </>
           )}
         </>
