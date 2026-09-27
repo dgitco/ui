@@ -10,15 +10,19 @@ import { cn } from "@/lib/utils";
  *   </AppHeader>
  */
 export function AppHeader({ brand, nav, children, className }: { brand: ReactNode; nav?: ReactNode; children?: ReactNode; className?: string }) {
+  // Three columns from sm up, the outer two equal, so the nav sits in the middle of the page
+  // however wide the brand side gets. On phones the nav takes its own row.
   return (
-    <header className={cn("flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-4 py-[14px] sm:px-6 sm:py-[18px]", className)}>
-      {brand}
+    <header className={cn("grid grid-cols-[1fr_auto] items-center gap-x-6 gap-y-3 px-4 py-[14px] sm:grid-cols-[1fr_auto_1fr] sm:px-6 sm:py-[18px]", className)}>
+      <div className="flex min-w-0 items-center justify-self-start">{brand}</div>
       {nav ? (
-        <nav className="order-last flex w-full gap-1 overflow-x-auto sm:order-none sm:w-auto" aria-label="Main">
+        <nav className="order-last col-span-2 flex gap-1 overflow-x-auto sm:order-none sm:col-span-1" aria-label="Main">
           {nav}
         </nav>
-      ) : null}
-      <div className="flex min-w-0 items-center gap-2">{children}</div>
+      ) : (
+        <span className="hidden sm:block" />
+      )}
+      <div className="flex min-w-0 items-center justify-self-end gap-2">{children}</div>
     </header>
   );
 }
