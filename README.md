@@ -1,18 +1,28 @@
 # DGit UI
 
-개인 프로젝트들이 같이 쓰는 UI 킷. shadcn 레지스트리(`@dgit`)라서, 각 프로젝트가 필요한 항목을 **소스로 복사해 가서** 고쳐 쓴다. 사이트: https://ui.dgit.co (미리보기, 설치 명령, 소스)
+[한국어](README.ko.md)
 
-## 구조
+Quiet, sharp React components for dashboards and sign-in screens, as a [shadcn](https://ui.shadcn.com) registry (`@dgit`). `shadcn add` copies the source into your project, so you own it and can change it.
 
-| 경로 | 내용 |
+Site with previews, install commands, and source: **https://ui.dgit.co**
+
+| Item | What it is |
 |---|---|
-| `registry/dgit/` | 킷 원본. `styles/dgit.css`(테마), `lib/theme.ts`, `ui/*`(컴포넌트), `blocks/*`(화면 단위) |
-| `registry.json` | 항목 목록. `bun run registry`가 `public/r/<항목>.json`으로 빌드 |
-| `skills/dgit-ui/SKILL.md` | 에이전트용 스킬. 빌드 때 `public/skill.md`로 복사되어 사이트에서 받을 수 있다 |
-| `src/` | 쇼케이스 사이트 (Vite + React + Tailwind v4). 미리보기는 `registry/` 원본을 그대로 쓴다 |
-| `worker/` | `/r/*`에서만 도는 워커. 레지스트리 요청 수를 날짜·항목별로 센다. 숫자는 비공개이고 사이트에는 안 나온다 |
+| `theme` | Neutral gray scale in light and dark, shadcn's color names on it, a type scale |
+| `use-theme` | System, light, or dark, saved and applied before first paint |
+| `button` | Pill buttons, 40px tall by default |
+| `menu` | A floating panel from a trigger, no positioning library |
+| `account-menu` | Avatar button: who's signed in, a theme switch, your links, log out |
+| `page` | PageHeader, Section, List, Notice, and `ago()` for relative times |
+| `copy` | A monospace value with a copy button |
+| `segmented` | Two or three choices in one small pill |
+| `app-header` | Dashboard top bar: brand, pill navigation, account menu |
+| `sidebar-layout` | Dashboard sidebar with drill-in groups, breadcrumbs, and a phone drawer |
+| `auth-page` | Sign-in page: a centered column, pill choices, a code field |
 
-## 프로젝트에서 쓰기
+## Use it in a project
+
+React and Tailwind CSS v4 with shadcn set up (`components.json` and `cn` in `lib/utils`).
 
 ```json
 // components.json
@@ -23,28 +33,38 @@
 npx shadcn add @dgit/theme @dgit/use-theme @dgit/account-menu @dgit/app-header
 ```
 
-메인 CSS에서 Tailwind 다음에 `@import "./dgit.css";`, `<head>`에 `themeScript`(`lib/theme`)를 인라인으로 넣는다. 자세한 건 사이트의 Docs.
+Import `dgit.css` after Tailwind in your main CSS (`@import "./dgit.css";`), and inline `themeScript` (from `lib/theme`) in `<head>`. See [Get started](https://ui.dgit.co/docs).
 
-## 에이전트 스킬
+## Agent skill
 
-`skills/dgit-ui/SKILL.md`를 각 도구의 스킬 폴더에 `dgit-ui/SKILL.md`로 두면 Claude Code, Codex, Cursor가 UI를 만들 때 이 킷을 쓴다. 0bridge를 쓰면 `0b`가 모든 도구에 맞춰 준다.
+[`skills/dgit-ui/SKILL.md`](skills/dgit-ui/SKILL.md) (also at https://ui.dgit.co/skill.md) tells Claude Code, Codex, or Cursor to build UI with this kit. Put it in the tool's skills folder as `dgit-ui/SKILL.md`.
 
-## 개발
+## Layout
+
+| Path | What |
+|---|---|
+| `registry/dgit/` | The kit: `styles/dgit.css` (theme), `lib/theme.ts`, `ui/*` (components), `blocks/*` (screens) |
+| `registry.json` | The item list. `bun run registry` builds it into `public/r/<item>.json` |
+| `src/` | The showcase site (Vite, React, Tailwind v4). Previews use the `registry/` sources directly |
+| `scripts/seo.ts` | After the build, writes a static HTML page per route (title, description, structured data, text) plus `robots.txt`, `sitemap.xml`, and `llms.txt`, so crawlers that don't run JavaScript can read the site |
+| `worker/` | Runs only for `/r/*` and counts registry fetches per day and item. The counts are private |
+
+## Develop
 
 ```sh
 bun install
 bun run registry   # public/r, public/skill.md
 bun run dev        # http://localhost:5173
-bun run build      # 레지스트리 + 타입 검사 + 사이트
-bun run deploy     # Cloudflare (DGit 계정, ui.dgit.co). `0b profile use dgit`가 걸려 있어야 한다
+bun run build      # registry, type check, site, SEO pages
+bun run deploy     # Cloudflare (ui.dgit.co)
 ```
 
-원본 import는 받는 프로젝트에서의 경로로 쓴다: `@/lib/utils`, `@/registry/dgit/ui/…`. `shadcn add`가 받는 쪽 별칭(`~/components/ui/…` 등)으로 바꿔 준다. 킷이 `utils`를 다시 받지 않도록 `registryDependencies`에 `utils`를 넣지 않는다(shadcn 최신 `utils`가 기존 `cn`을 바꿔 버린다).
+Registry sources import the paths they'll have in a project: `@/lib/utils`, `@/registry/dgit/…`. `shadcn add` rewrites them to the project's aliases. `utils` isn't in any item's `registryDependencies`, so installing the kit never replaces a project's existing `cn`.
 
-## 출처
+## Credits
 
-로그인 화면과 상단 바는 0bridge에서, 메뉴·계정 메뉴·회색 단계는 Geist(Vercel 대시보드) 스타일을 실측해 다시 만들었다. 아이콘은 lucide, 글꼴은 Geist(SIL OFL).
+The sign-in screen and top bar come from 0bridge; the menus, account menu, and gray scale were rebuilt from measurements of Geist (the Vercel dashboard style). Icons are lucide; the font is Geist (SIL OFL).
 
-## 라이선스
+## License
 
-MIT. 글꼴 Geist는 SIL OFL.
+MIT. The Geist font is under the SIL Open Font License.
