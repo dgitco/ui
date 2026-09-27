@@ -133,6 +133,24 @@
       ]
     },
     {
+      "name": "sidebar-layout",
+      "type": "registry:block",
+      "title": "Sidebar layout",
+      "description": "Dashboard with a sidebar: drill-in groups and route layers that slide in with a back row, a top bar with a scope switcher and breadcrumbs, a drawer on phones.",
+      "dependencies": [
+        "lucide-react"
+      ],
+      "registryDependencies": [
+        "@dgit/menu"
+      ],
+      "files": [
+        {
+          "path": "registry/dgit/blocks/sidebar-layout.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
       "name": "auth-page",
       "type": "registry:block",
       "title": "Sign-in page",

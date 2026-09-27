@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { House, KeyRound, Mail, Settings } from "lucide-react";
+import { BookOpen, Boxes, Cable, FolderGit2, House, KeyRound, LayoutGrid, Lock, Mail, Settings, Shield, Users } from "lucide-react";
 import { AccountMenu, ThemeSwitch } from "@/registry/dgit/ui/account-menu";
 import { Button } from "@/registry/dgit/ui/button";
 import { CopyField } from "@/registry/dgit/ui/copy";
@@ -7,6 +7,7 @@ import { Kbd, Menu, MenuItem, MenuLabel, MenuSeparator } from "@/registry/dgit/u
 import { List, Notice, PageHeader, Section } from "@/registry/dgit/ui/page";
 import { Segmented } from "@/registry/dgit/ui/segmented";
 import { AppHeader, navPill } from "@/registry/dgit/blocks/app-header";
+import { ScopeSwitcher, SidebarLayout, type LinkRenderer, type NavItem, type NavLayer } from "@/registry/dgit/blocks/sidebar-layout";
 import { AuthButton, AuthCodeField, AuthDivider, AuthField, AuthLayout, AuthNote, AuthTitle } from "@/registry/dgit/blocks/auth-page";
 import { useTheme } from "@/registry/dgit/lib/theme";
 import { DGitChip } from "./mark";
@@ -124,6 +125,77 @@ function ThemeDemo() {
       <div className="flex items-center gap-3 text-label-14">
         Theme <ThemeSwitch value={theme} onChange={setTheme} />
       </div>
+    </div>
+  );
+}
+
+const SIDEBAR_NAV: NavItem[] = [
+  { key: "overview", label: "Overview", to: "/", icon: <LayoutGrid /> },
+  { key: "projects", label: "Projects", to: "/projects", icon: <FolderGit2 /> },
+  { key: "connections", label: "Connections", to: "/connections", icon: <Cable /> },
+  { key: "team", label: "Team", icon: <Users />, children: [
+    { key: "members", label: "Members", to: "/team/members" },
+    { key: "roles", label: "Roles", to: "/team/roles" },
+  ] },
+  { key: "h", heading: true, label: "Account" },
+  { key: "security", label: "Security", to: "/security", icon: <Shield /> },
+  { key: "docs", label: "Docs", to: "https://ui.dgit.co/docs", icon: <BookOpen />, external: true },
+];
+const DEMO_PROJECTS = ["api", "web", "worker"];
+
+function SidebarDemo() {
+  const [path, setPath] = useState("/projects/api/secrets");
+  const link: LinkRenderer = ({ to, className, children, onClick, ...rest }) => (
+    <button type="button" className={className + " border-0 bg-transparent"} onClick={() => (setPath(to), onClick?.())} {...rest}>
+      {children}
+    </button>
+  );
+  const project = /^\/projects\/([^/]+)/.exec(path)?.[1];
+  const layer: NavLayer | null = project
+    ? {
+        key: project,
+        title: project,
+        back: { label: "All projects", to: "/projects" },
+        items: [
+          { key: "p-overview", label: "Overview", to: `/projects/${project}`, icon: <Boxes /> },
+          { key: "p-secrets", label: "Secrets", to: `/projects/${project}/secrets`, icon: <Lock /> },
+          { key: "p-settings", label: "Settings", to: `/projects/${project}/settings`, icon: <Settings /> },
+        ],
+      }
+    : null;
+  const page = path.split("/").filter(Boolean).at(-1) ?? "overview";
+  return (
+    <div className="relative h-full overflow-hidden [transform:translateZ(0)]">
+      <SidebarLayout
+        pathname={path}
+        link={link}
+        brand={<DGitChip />}
+        nav={SIDEBAR_NAV}
+        layer={layer}
+        top={{
+          left: (
+            <ScopeSwitcher
+              link={link}
+              current={project ? { key: project, label: project } : null}
+              all={{ label: "All projects", to: "/projects" }}
+              items={DEMO_PROJECTS.map((p) => ({ key: p, label: p, to: `/projects/${p}` }))}
+            />
+          ),
+          crumbs: project ? [{ label: "Projects", to: "/projects" }, { label: project, to: `/projects/${project}` }, ...(page !== project ? [{ label: page[0]!.toUpperCase() + page.slice(1) }] : [])] : [{ label: page[0]!.toUpperCase() + page.slice(1) }],
+        }}
+        footer={<AccountDemo />}
+      >
+        <div className="mx-auto w-full max-w-[640px] px-4 pt-8">
+          <List>
+            {DEMO_PROJECTS.map((p) => (
+              <button key={p} type="button" onClick={() => setPath(`/projects/${p}`)} className="flex w-full cursor-pointer items-center justify-between border-0 bg-transparent px-4 py-3 text-left">
+                <span className="font-medium">{p}</span>
+                <span className="text-copy-13 text-muted-foreground">Open</span>
+              </button>
+            ))}
+          </List>
+        </div>
+      </SidebarLayout>
     </div>
   );
 }
@@ -311,6 +383,27 @@ const [theme, setTheme] = useTheme(); // "system" | "light" | "dark"`,
 >
   <AccountMenu name={me.name} email={me.email} onSignOut={signOut} />
 </AppHeader>`,
+  },
+  {
+    name: "sidebar-layout",
+    title: "Sidebar layout",
+    kind: "block",
+    summary: "A sidebar for dashboards with more places than fit in a row. Groups and places like a project slide in with a back row; the top bar has a scope switcher and breadcrumbs.",
+    preview: () => <SidebarDemo />,
+    frame: 520,
+    usage: `import { ScopeSwitcher, SidebarLayout } from "@/components/sidebar-layout";
+
+<SidebarLayout
+  pathname={pathname}
+  link={(p) => <Link to={p.to} className={p.className} onClick={p.onClick}>{p.children}</Link>}
+  brand={<Logo />}
+  nav={NAV}                                   // leaves, groups (drill in), headings
+  layer={project ? projectLayer(project) : null} // a place in the URL, with a back row
+  top={{ left: <ScopeSwitcher current={…} items={projects} all={{ label: "All projects", to: "/projects" }} />, crumbs }}
+  footer={<AccountMenu side="above" align="start" name={me.name} onSignOut={signOut} />}
+>
+  <Outlet />
+</SidebarLayout>`,
   },
   {
     name: "auth-page",
