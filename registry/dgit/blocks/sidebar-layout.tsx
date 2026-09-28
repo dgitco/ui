@@ -72,7 +72,8 @@ export function activeLeaf(pathname: string, items: NavItem[]): NavLeaf | null {
   let best: NavLeaf | null = null;
   for (const l of leavesOf(items)) {
     if (l.external) continue;
-    const hit = pathname === l.to || pathname.startsWith(l.to.endsWith("/") ? l.to : `${l.to}/`);
+    // "/" (a home or overview) is lit only on itself, not as the prefix of every path.
+    const hit = pathname === l.to || (l.to !== "/" && pathname.startsWith(l.to.endsWith("/") ? l.to : `${l.to}/`));
     if (hit && (!best || l.to.length > best.to.length)) best = l;
   }
   return best;
