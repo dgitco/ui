@@ -170,7 +170,33 @@ const extra = `
 @media (max-width:640px){.doc .cards,.doc .cols{grid-template-columns:minmax(0,1fr)}}
 `;
 
-export const DOCS_CSS = { tokens, focus, content, article, layout, extra };
+/**
+ * Search (docsSearch() in lib/docs.ts): the header button (an icon on phones), the dialog, its
+ * results. Opt in: docsStyle({ search: true }) or `${DOCS_CSS.search}`.
+ */
+const search = `
+.srch-b{flex:none;display:inline-flex;align-items:center;gap:8px;height:34px;min-width:220px;padding:0 8px 0 12px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--muted);font:inherit;font-size:14px;cursor:pointer}
+.srch-b:hover{color:var(--fg)}.srch-b svg{flex:none}
+.srch-b kbd{margin-left:auto;padding:3px 6px;border:1px solid var(--line);border-radius:6px;background:var(--bg);font:500 11px/1 "Geist Mono",ui-monospace,monospace;color:var(--muted)}
+@media (hover:none){.srch-b kbd{display:none}}
+@media (max-width:820px){.srch-b{min-width:0;width:34px;padding:0;justify-content:center}.srch-b span,.srch-b kbd{display:none}}
+dialog.srch{width:min(640px,calc(100vw - 24px));max-height:min(560px,calc(100dvh - 48px));margin:10vh auto auto;padding:0;border:1px solid var(--line);border-radius:16px;background:var(--bg);color:var(--fg);overflow:hidden;flex-direction:column}
+dialog.srch[open]{display:flex}dialog.srch::backdrop{background:rgba(0,0,0,.45)}
+.srch-in{display:flex;align-items:center;gap:10px;padding:0 10px 0 16px;border-bottom:1px solid var(--line);color:var(--muted)}
+.srch-in input{flex:1;min-width:0;height:52px;border:0;background:none;color:var(--fg);font:inherit;font-size:16px;outline:none}
+.srch-in input::-webkit-search-cancel-button{display:none}
+.srch-in button{height:28px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:none;color:var(--muted);font:inherit;font-size:12px;cursor:pointer}
+dialog.srch ul{list-style:none;margin:0;padding:6px;overflow:auto}dialog.srch ul:empty{display:none}
+dialog.srch li a{display:block;padding:10px 12px;border-radius:10px;color:inherit;text-decoration:none}
+dialog.srch li[aria-selected="true"] a,dialog.srch li a:hover{background:var(--card)}
+dialog.srch li b{font-weight:500}dialog.srch li span{margin-left:8px;font-size:12px;color:var(--muted)}
+dialog.srch li p{margin:2px 0 0;font-size:13px;line-height:1.5;color:var(--muted);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+dialog.srch mark{background:none;color:var(--fg);font-weight:600}
+.srch-0{padding:24px 12px;text-align:center;color:var(--muted);font-size:14px}
+@media (max-width:640px){dialog.srch{margin:8px auto auto;max-height:calc(100dvh - 16px)}}
+`;
 
-/** A docs site's styles in one <style>: focus, content, layout and extra, with the DGit color names first when `tokens`. */
-export const docsStyle = (o: { tokens?: boolean } = {}) => `<style>${o.tokens ? tokens : ""}${focus}${content}${layout}${extra}</style>`;
+export const DOCS_CSS = { tokens, focus, content, article, layout, extra, search };
+
+/** A docs site's styles in one <style>: focus, content, layout and extra, with the DGit color names first when `tokens`, and search's when `search`. */
+export const docsStyle = (o: { tokens?: boolean; search?: boolean } = {}) => `<style>${o.tokens ? tokens : ""}${focus}${content}${layout}${extra}${o.search ? search : ""}</style>`;
