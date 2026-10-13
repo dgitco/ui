@@ -82,7 +82,11 @@ Then open <Icon icon="gear" /> **Settings** and pick the <Tooltip tip="The machi
   <Card title="Support" icon="comments" href="#">
     We answer in the chat.
   </Card>
-</CardGroup>`;
+</CardGroup>
+
+<Card title="Settings" icon="gear" href="#" horizontal>
+  Prices, frames and the kiosk's screen.
+</Card>`;
 
 /** Font Awesome names as Mintlify writes them (gear, comments), lucide's icons; only these three are bundled. */
 const icon = lucideIcons({ Image, MessagesSquare, Settings });

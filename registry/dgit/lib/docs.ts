@@ -24,6 +24,8 @@
  *    with Font Awesome's names (Mintlify's) mapped to lucide's.
  *  - Moving a site from Mintlify: `headingId: mintlifyHeadingId` keeps its section anchors, menu
  *    groups take Mintlify's group icons (DocGroup.icon), and docsScript(labels) speaks the page's language.
+ *  - Search (opt in): searchIndex() at build time, docsSearch() for the button, dialog and script,
+ *    DOCS_CSS.search for its styles. No service: a JSON file and a few lines of script.
  *
  * Input is trusted (your own docs): text is escaped, but the raw HTML above is passed through with
  * a short list of attributes and no javascript: URLs.
@@ -424,8 +426,14 @@ function component(t: Tag, body: string | null, c: Ctx): string {
     case "Card": {
       const href = attr(a, "href");
       const icon = attr(a, "icon") && c.o.icon?.(attr(a, "icon")!);
-      const inner = `${icon ? `<span class="card-i">${icon}</span>` : ""}${a.title ? `<span class="card-t">${title()}</span>` : ""}${body ? `<div class="card-b">${md(body)}</div>` : ""}`;
-      return href ? `<a class="card" href="${escape(safeUrl(href))}"${/^https?:/.test(href) ? ' target="_blank" rel="noopener"' : ""}>${inner}</a>` : `<div class="card">${inner}</div>`;
+      const text = `${a.title ? `<span class="card-t">${title()}</span>` : ""}${body ? `<div class="card-b">${md(body)}</div>` : ""}`;
+      // `horizontal`: the icon on the left, the text on its right. Laid out inline, so no stylesheet changes for it.
+      const row = flag(a, "horizontal");
+      const inner = row
+        ? `${icon ? `<span class="card-i" style="margin:0">${icon}</span>` : ""}<span class="card-c" style="display:flex;flex-direction:column;gap:2px;min-width:0">${text}</span>`
+        : `${icon ? `<span class="card-i">${icon}</span>` : ""}${text}`;
+      const cls = row ? ' class="card card-h" style="flex-direction:row;align-items:center;gap:14px"' : ' class="card"';
+      return href ? `<a${cls} href="${escape(safeUrl(href))}"${/^https?:/.test(href) ? ' target="_blank" rel="noopener"' : ""}>${inner}</a>` : `<div${cls}>${inner}</div>`;
     }
     case "Frame": {
       const caption = attr(a, "caption");
@@ -705,6 +713,82 @@ if(links.length){const io=new IntersectionObserver(es=>es.forEach(en=>{if(en.isI
 };
 /** docsScript() in English. */
 export const DOCS_SCRIPT = docsScript();
+
+// ── Search ─────────────────────────────────────────────────
+
+/** One entry of the search index: [address with #section, page title, section heading ("" for the top), plain text]. */
+export type SearchEntry = [href: string, page: string, heading: string, text: string];
+
+/** A page's Markdown/MDX as plain text: components' titles kept (Step, Accordion, Card), tags, images and Markdown marks dropped. */
+export function plainText(md: string): string {
+  return md
+    .replace(/\{\/\*[\s\S]*?\*\/\}|<!--[\s\S]*?-->/g, " ")
+    .replace(/^```[^\n]*$/gm, " ")
+    .replace(/<[A-Za-z][^>]*?\stitle=(["'])(.*?)\1[^>]*>/g, " $2 ")
+    .replace(/<\/?[A-Za-z][^>]*>/g, " ")
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+    .replace(/^\s*(#{1,6}|>|[-*+]|\d+[.)])\s+/gm, "")
+    .replace(/^\|?[\s:|-]+\|?$/gm, " ")
+    .replace(/\*\*|__|`/g, "")
+    .replace(/\|/g, " ")
+    .replace(/(^|\W)_([^_]+)_(?=\W|$)/g, "$1$2")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * The search index for docsSearch(): each page cut at its `##` and `###` headings, so a result opens
+ * at its section. Serve it as JSON (`JSON.stringify(searchIndex(pages))`) next to the pages; the
+ * script fetches it the first time search opens. `headingId` as given to renderMarkdown().
+ */
+export function searchIndex(pages: { href: string; title: string; md: string }[], o: Pick<MarkdownOptions, "headingId"> = {}): SearchEntry[] {
+  const id = o.headingId ?? headingId;
+  const out: SearchEntry[] = [];
+  for (const p of pages) {
+    const prose = p.md.replace(/^```[^\n]*\n[\s\S]*?\n```[ \t]*$/gm, (code) => code.replace(/^#/gm, " #"));
+    const parts = prose.split(/^(#{2,3} .+)$/m);
+    out.push([p.href, p.title, "", plainText(parts[0]!)]);
+    for (let i = 1; i < parts.length; i += 2) {
+      const heading = parts[i]!.replace(/^#+ /, "").trim();
+      out.push([`${p.href}#${id(heading)}`, p.title, plainText(heading), plainText(parts[i + 1] ?? "")]);
+    }
+  }
+  return out;
+}
+
+const SEARCH_ICON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>`;
+
+/**
+ * Search over the pages, with no service behind it: a button for the header (it shrinks to an icon
+ * on phones), a dialog, and a small script that fetches `index` (searchIndex() as JSON) on first
+ * open. Ctrl K / ⌘K or "/" opens it; ↑ ↓ Enter pick a result; Esc closes. Matching is by parts of
+ * words in any language (every word typed must appear; spaces don't matter, so 프레임관리 finds
+ * 프레임 관리), titles and headings first. Styles: DOCS_CSS.search.
+ */
+export function docsSearch(o: { index: string; labels?: { button?: string; placeholder?: string; empty?: string; close?: string } }): { button: string; dialog: string } {
+  const l = { button: "Search", placeholder: "Search the docs", empty: "No results", close: "Close", ...o.labels };
+  const js = (v: string) => JSON.stringify(v).replace(/</g, "\\u003c");
+  const button = `<button type="button" class="srch-b" data-search-open aria-haspopup="dialog">${SEARCH_ICON}<span>${escape(l.button)}</span><kbd>⌘K</kbd></button>`;
+  const dialog =
+    `<dialog class="srch" aria-label="${escape(l.button)}"><div class="srch-in">${SEARCH_ICON}<input type="search" placeholder="${escape(l.placeholder)}" autocomplete="off" spellcheck="false" aria-controls="srch-r"><button type="button" data-search-close>${escape(l.close)}</button></div><ul id="srch-r" role="listbox"></ul></dialog>` +
+    `<script>(()=>{const d=document.querySelector("dialog.srch"),q=d.querySelector("input"),ul=d.querySelector("ul"),E=${js(l.empty)};let ix,sel=0,hits=[];
+const esc=s=>s.replace(/[&<>"]/g,c=>"&#"+c.charCodeAt(0)+";"),norm=s=>s.toLowerCase(),flat=s=>s.replace(/\\s+/g,"");
+const load=async()=>ix||(ix=(await (await fetch(${js(o.index)})).json()).map(e=>{const h=norm(e[1]+" "+e[2]+" "+e[3]);return{e,h,f:flat(h),t:flat(norm(e[1])),s:flat(norm(e[2]))}}));
+const has=(x,w)=>x.h.includes(w)||x.f.includes(w);
+const snip=(t,ws)=>{const lt=norm(t);let i=-1;for(const w of ws){i=lt.indexOf(w);if(i>=0)break}const a=Math.max(0,i-40),s=(a?"…":"")+t.slice(a,a+140)+(t.length>a+140?"…":"");let h=esc(s);for(const w of ws)if(w)h=h.replace(new RegExp(esc(w).replace(/[.*+?^\${}()|[\\]\\\\]/g,"\\\\$&"),"gi"),m=>"<mark>"+m+"</mark>");return h};
+const show=()=>{[...ul.children].forEach((li,i)=>li.setAttribute("aria-selected",i===sel));ul.children[sel]?.scrollIntoView({block:"nearest"})};
+const run=async()=>{const v=norm(q.value.trim());if(!v){ul.innerHTML="";hits=[];return}const ws=v.split(/\\s+/),all=await load();
+hits=all.filter(x=>ws.every(w=>has(x,w))).map(x=>({x,r:ws.reduce((n,w)=>n+(x.t.includes(w)?4:0)+(x.s.includes(w)?2:0),0)+(x.t===flat(v)||x.s===flat(v)?8:0)+(x.e[2]?0:1)})).sort((a,b)=>b.r-a.r).slice(0,20).map(h=>h.x);
+sel=0;ul.innerHTML=hits.length?hits.map((x,i)=>'<li role="option"><a href="'+esc(x.e[0])+'"><b>'+esc(x.e[2]||x.e[1])+'</b>'+(x.e[2]?'<span>'+esc(x.e[1])+'</span>':"")+'<p>'+snip(x.e[3]||x.e[2],ws)+'</p></a></li>').join(""):'<li class="srch-0">'+esc(E)+'</li>';show()};
+const open=()=>{if(!d.open){d.showModal();q.select();load()}};
+document.addEventListener("keydown",e=>{if((e.key==="k"||e.key==="K")&&(e.metaKey||e.ctrlKey)||e.key==="/"&&!/input|textarea|select/i.test(document.activeElement.tagName)&&!document.activeElement.isContentEditable){e.preventDefault();open()}});
+document.addEventListener("click",e=>{if(e.target.closest("[data-search-open]"))open();else if(e.target===d||e.target.closest("[data-search-close]"))d.close();else if(e.target.closest("dialog.srch a"))d.close()});
+q.addEventListener("input",run);
+q.addEventListener("keydown",e=>{if(e.key==="ArrowDown"||e.key==="ArrowUp"){e.preventDefault();if(hits.length){sel=(sel+(e.key==="ArrowDown"?1:hits.length-1))%hits.length;show()}}else if(e.key==="Enter"&&hits[sel]){e.preventDefault();d.close();location.href=hits[sel].e[0]}});
+})()</script>`;
+  return { button, dialog };
+}
 
 // ── For agents ─────────────────────────────────────────────
 

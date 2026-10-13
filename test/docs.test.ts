@@ -2,7 +2,7 @@
 // adds, and Mintlify's components as the Photoito guide writes them. `bun test`.
 import { expect, test } from "bun:test";
 import { DOCS_CSS, docsStyle } from "../registry/dgit/lib/docs-css";
-import { DOCS_SCRIPT, docMenu, docsLayout, docsScript, frontMatter, inline, lede, llmsTxt, markdown, menuPages, mintlifyHeadingId, renderMarkdown, tocLinks } from "../registry/dgit/lib/docs";
+import { DOCS_SCRIPT, docMenu, docsLayout, docsScript, docsSearch, frontMatter, inline, lede, llmsTxt, markdown, menuPages, mintlifyHeadingId, plainText, renderMarkdown, searchIndex, tocLinks } from "../registry/dgit/lib/docs";
 import { FA_TO_LUCIDE, docIcons, lucideExport, lucideIcons, svgIcon } from "../registry/dgit/lib/docs-icons";
 import * as lucide from "lucide";
 
@@ -214,4 +214,35 @@ test("styles: sections are one rule a line between newlines; docsStyle puts them
     expect(v.split("{").length, k).toBe(v.split("}").length);
   }
   expect(docsStyle({ tokens: true })).toStartWith("<style>\n.doc,.docs{--fg:var(--foreground)");
+  expect(docsStyle()).not.toContain(".srch-b");
+  expect(docsStyle({ search: true })).toContain(".srch-b{");
+});
+
+test("horizontal card: icon left, text right, laid out inline; other cards as before", () => {
+  const icon = () => "<svg></svg>";
+  const card = '<Card title="아이폰" icon="apple" href="https://apps.apple.com">\n  App Store에서 받기\n</Card>';
+  const plain = markdown(card, { icon });
+  expect(plain).toBe('<a class="card" href="https://apps.apple.com" target="_blank" rel="noopener"><span class="card-i"><svg></svg></span><span class="card-t">아이폰</span><div class="card-b"><p>App Store에서 받기</p></div></a>');
+  expect(markdown(card.replace("<Card ", "<Card horizontal "), { icon })).toBe(
+    '<a class="card card-h" style="flex-direction:row;align-items:center;gap:14px" href="https://apps.apple.com" target="_blank" rel="noopener"><span class="card-i" style="margin:0"><svg></svg></span><span class="card-c" style="display:flex;flex-direction:column;gap:2px;min-width:0"><span class="card-t">아이폰</span><div class="card-b"><p>App Store에서 받기</p></div></span></a>',
+  );
+});
+
+test("search: plain text, an index cut at headings, the button and dialog", () => {
+  expect(plainText('<Steps>\n  <Step title="「저장」을 눌러요">\n    **M** 키를 [눌러요](/x). ![그림](/a.png)\n    <img src="/b.png" alt="b" />\n  </Step>\n</Steps>\n\n| A | B |\n| --- | --- |\n| `c` | d |')).toBe("「저장」을 눌러요 M 키를 눌러요. A B c d");
+  const ix = searchIndex([{ href: "/frames", title: "프레임 관리", md: "앞글.\n\n## 카테고리·필터 만들기\n\n본문 **굵게**.\n\n```md\n## 코드 안\n```\n\n### 순서" }], { headingId: mintlifyHeadingId });
+  expect(ix).toEqual([
+    ["/frames", "프레임 관리", "", "앞글."],
+    ["/frames#카테고리·필터-만들기", "프레임 관리", "카테고리·필터 만들기", "본문 굵게. 코드 안"],
+    ["/frames#순서", "프레임 관리", "순서", ""],
+  ]);
+  const s = docsSearch({ index: "/search.json", labels: { button: "검색", placeholder: "가이드 검색", empty: "</script>" } });
+  expect(s.button).toContain('data-search-open');
+  expect(s.button).toContain("<span>검색</span><kbd>⌘K</kbd>");
+  expect(s.dialog).toContain('<dialog class="srch" aria-label="검색">');
+  expect(s.dialog).toContain('placeholder="가이드 검색"');
+  expect(s.dialog).toContain('fetch("/search.json")');
+  expect(s.dialog).not.toContain('"</script>"');
+  // the script parses
+  new Function(s.dialog.split("<script>")[1]!.split("</script>")[0]!);
 });

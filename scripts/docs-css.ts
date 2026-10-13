@@ -4,7 +4,7 @@
 import { writeFileSync } from "node:fs";
 import { DOCS_CSS } from "../registry/dgit/lib/docs-css";
 
-const { tokens, focus, content, layout, extra } = DOCS_CSS;
+const { tokens, focus, content, layout, extra, search } = DOCS_CSS;
 const css = `/*
  * DGit UI docs: the styles for the HTML lib/docs.ts writes (a docs site: side menu, article, "On
  * this page", and the Mintlify-style components). Import it after the theme:
@@ -22,5 +22,6 @@ const css = `/*
 /* Focus ring, reduced motion */${focus}
 /* Tables, notes, "Last updated", call to action */${content}
 /* Docs layout: side menu, article, "On this page", ask row, previous/next */${layout}
-/* Beyond the core: h4–h6, rules, images, nested lists, components, menu groups */${extra}`;
+/* Beyond the core: h4–h6, rules, images, nested lists, components, menu groups */${extra}
+/* Search: docsSearch()'s button and dialog */${search}`;
 writeFileSync("registry/dgit/styles/docs.css", css);
