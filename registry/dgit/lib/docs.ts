@@ -774,11 +774,11 @@ export function docsSearch(o: { index: string; labels?: { button?: string; place
     `<dialog class="srch" aria-label="${escape(l.button)}"><div class="srch-in">${SEARCH_ICON}<input type="search" placeholder="${escape(l.placeholder)}" autocomplete="off" spellcheck="false" aria-controls="srch-r"><button type="button" data-search-close>${escape(l.close)}</button></div><ul id="srch-r" role="listbox"></ul></dialog>` +
     `<script>(()=>{const d=document.querySelector("dialog.srch"),q=d.querySelector("input"),ul=d.querySelector("ul"),E=${js(l.empty)};let ix,sel=0,hits=[];
 const esc=s=>s.replace(/[&<>"]/g,c=>"&#"+c.charCodeAt(0)+";"),norm=s=>s.toLowerCase(),flat=s=>s.replace(/\\s+/g,"");
-const load=async()=>ix||(ix=(await (await fetch(${js(o.index)})).json()).map(e=>{const h=norm(e[1]+" "+e[2]+" "+e[3]);return{e,h,f:flat(h),t:flat(norm(e[1])),s:flat(norm(e[2]))}}));
+const load=()=>ix||(ix=fetch(${js(o.index)}).then(r=>r.json()).then(a=>a.map(e=>{const h=norm(e[1]+" "+e[2]+" "+e[3]);return{e,h,f:flat(h),t:flat(norm(e[1])),s:flat(norm(e[2]))}})).catch(()=>(ix=null,[])));
 const has=(x,w)=>x.h.includes(w)||x.f.includes(w);
 const snip=(t,ws)=>{const lt=norm(t);let i=-1;for(const w of ws){i=lt.indexOf(w);if(i>=0)break}const a=Math.max(0,i-40),s=(a?"…":"")+t.slice(a,a+140)+(t.length>a+140?"…":"");let h=esc(s);for(const w of ws)if(w)h=h.replace(new RegExp(esc(w).replace(/[.*+?^\${}()|[\\]\\\\]/g,"\\\\$&"),"gi"),m=>"<mark>"+m+"</mark>");return h};
 const show=()=>{[...ul.children].forEach((li,i)=>li.setAttribute("aria-selected",i===sel));ul.children[sel]?.scrollIntoView({block:"nearest"})};
-const run=async()=>{const v=norm(q.value.trim());if(!v){ul.innerHTML="";hits=[];return}const ws=v.split(/\\s+/),all=await load();
+const run=async()=>{const v=norm(q.value.trim());if(!v){ul.innerHTML="";hits=[];return}const ws=v.split(/\\s+/),all=await load();if(v!==norm(q.value.trim()))return;
 hits=all.filter(x=>ws.every(w=>has(x,w))).map(x=>({x,r:ws.reduce((n,w)=>n+(x.t.includes(w)?4:0)+(x.s.includes(w)?2:0),0)+(x.t===flat(v)||x.s===flat(v)?8:0)+(x.e[2]?0:1)})).sort((a,b)=>b.r-a.r).slice(0,20).map(h=>h.x);
 sel=0;ul.innerHTML=hits.length?hits.map((x,i)=>'<li role="option"><a href="'+esc(x.e[0])+'"><b>'+esc(x.e[2]||x.e[1])+'</b>'+(x.e[2]?'<span>'+esc(x.e[1])+'</span>':"")+'<p>'+snip(x.e[3]||x.e[2],ws)+'</p></a></li>').join(""):'<li class="srch-0">'+esc(E)+'</li>';show()};
 const open=()=>{if(!d.open){d.showModal();q.select();load()}};
