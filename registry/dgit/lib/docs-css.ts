@@ -16,10 +16,12 @@
  * The colors above from the DGit theme (dgit.css): --fg is foreground, --bg background, --line
  * border, --muted muted-foreground, --card secondary (gray-100), --card2 gray-200, --hover accent,
  * --dim gray-500; --ok, --warn and --warn-bg are the theme's own. Inside .doc and .docs, --muted
- * and --card are the docs' text and fill colors, not shadcn's.
+ * and --card are the docs' text and fill colors, not shadcn's. Lists get back the markers
+ * Tailwind's reset takes away.
  */
 const tokens = `
 .doc,.docs{--fg:var(--foreground);--bg:var(--background);--line:var(--border);--muted:var(--muted-foreground);--card:var(--secondary);--card2:hsla(var(--dgit-gray-200),1);--hover:var(--accent);--dim:hsla(var(--dgit-gray-500),1)}
+.doc ul{list-style:disc}.doc ol{list-style:decimal}
 `;
 
 /** One visible focus ring for keyboard users, and no smooth scrolling or long transitions when motion is reduced. */
@@ -112,8 +114,8 @@ const layout = `
 
 /**
  * What goes beyond the core (renderMarkdown() says when a page used it): h4–h6, rules, images,
- * nested lists, and the components: callouts, steps, accordions, cards, columns, frames, tabs, and
- * folding groups in the side menu.
+ * nested and loose lists, code titles, and the components: callouts, steps, accordions, cards,
+ * columns, frames, tabs, code groups, icons, tooltips, and folding groups in the side menu.
  */
 const extra = `
 .doc h4,.doc h5,.doc h6{font-size:15px;font-weight:600;margin:24px 0 6px;scroll-margin-top:88px}
@@ -121,6 +123,11 @@ const extra = `
 .doc hr{margin:32px 0;border:0;border-top:1px solid var(--line)}
 .doc img{max-width:100%;height:auto}
 .doc li>ul,.doc li>ol{margin:4px 0 0}
+.doc li>p,.doc li>pre,.doc li>.tbl{margin:8px 0}.doc li>:first-child{margin-top:0}.doc li>:last-child{margin-bottom:0}
+.doc pre[data-title]{position:relative;padding-top:50px}
+.doc pre[data-title]::before{content:attr(data-title);position:absolute;top:0;left:0;right:0;padding:9px 18px;border-bottom:1px solid var(--line);font:500 12.5px/1.5 "Geist Mono",ui-monospace,monospace;color:var(--muted);white-space:nowrap}
+.doc .ic{display:inline-flex;vertical-align:-.125em}.doc .ic svg{width:1em;height:1em}
+.doc .tt{text-decoration:underline dotted var(--dim);text-underline-offset:3px;cursor:help}
 .doc .note{display:flex;gap:12px;margin:0 0 16px;padding:12px 16px;border-radius:14px;background:var(--card);font-size:15px;line-height:1.6}
 .doc .note>svg{flex:none;margin-top:4px;color:var(--muted)}
 .doc .note>div{flex:1;min-width:0}.doc .note>div>:last-child{margin-bottom:0}.doc .note code{background:var(--bg)}
@@ -155,6 +162,7 @@ const extra = `
 .doc .tabs>input:focus-visible+label{outline:2px solid var(--fg);outline-offset:-4px;border-radius:10px}
 .doc .tab{display:none;order:1;width:100%;padding:16px 18px;border-top:1px solid var(--line)}.doc .tab>:last-child{margin-bottom:0}
 .doc .tabs>input:checked+label+.tab{display:block}
+.doc .codes{background:var(--card)}.doc .codes>.tab{padding:0}.doc .codes pre{margin:0;border-radius:0 0 13px 13px}
 .dgrp summary{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-radius:8px;color:var(--muted);list-style:none;cursor:pointer}
 .dgrp summary::-webkit-details-marker{display:none}
 .dgrp summary:hover{color:var(--fg)}.dgrp summary svg{transition:transform .2s}.dgrp[open]>summary svg{transform:rotate(180deg)}

@@ -25,7 +25,7 @@ Don't let `shadcn add` replace an existing `lib/utils.ts`.
 |---|---|
 | `@dgit/theme` | Colors (gray-100…gray-1000, background-100/200, gray-alpha-*; shadcn names on top), light/dark, type scale |
 | `@dgit/use-theme` | `useTheme()` → "system" / "light" / "dark"; `themeScript` for `<head>` |
-| `@dgit/docs` | Docs pages (a user guide, product docs, a Mintlify site moving off Mintlify): `renderMarkdown()` takes Markdown with Mintlify's `<Steps>`, `<Accordion>`, `<Note>`/`<Tip>`/`<Warning>`, `<Card>`/`<CardGroup>`, `<Frame>`, `<Columns>`, `<Tabs>` as written in .mdx; `docsLayout()`, `docMenu()`, `tocLinks()`, `prevNext()`, `llmsTxt()`; styles as `docs.css` or `docsStyle()`. HTML strings, no React, so it also runs in a Worker |
+| `@dgit/docs` | Docs pages (a user guide, product docs, a Mintlify site moving off Mintlify): `renderMarkdown()` takes Markdown with Mintlify's `<Steps>`, `<Accordion>`, `<Note>`/`<Tip>`/`<Warning>`, `<Card>`/`<CardGroup>`, `<Frame>`, `<Columns>`, `<Tabs>`, `<CodeGroup>`, `<Icon>`, `<Tooltip>` as written in .mdx (icons: `lucideIcons()` from `lib/docs-icons`, Font Awesome names mapped to lucide); `docsLayout()`, `docMenu()`, `tocLinks()`, `prevNext()`, `llmsTxt()`; styles as `docs.css` or `docsStyle()`. HTML strings, no React, so it also runs in a Worker |
 | `@dgit/button` | Pill buttons (40px; `sm` 32px). Variants: default, outline, ghost, destructive, link |
 | `@dgit/menu` | `Menu`, `MenuItem`, `MenuSeparator`, `MenuLabel`, `Kbd`: any dropdown or popover list |
 | `@dgit/account-menu` | Avatar button + menu (name, email, theme switch, links, log out). Header: default; sidebar bottom: `side="above" align="start"` |

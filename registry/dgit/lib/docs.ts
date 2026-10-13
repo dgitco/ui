@@ -5,18 +5,23 @@
  * (strings) or docs.css (the same rules as a file).
  *
  * What it reads
- *  - The core, kept byte for byte from 0bridge's docs (with `legacy`): `#`–`###` headings with
- *    anchors, paragraphs, `-` and `1.` lists, GFM tables, `>` notes, fenced code, `code`, **bold**,
- *    _italic_, links.
+ *  - The core, as 0bridge's docs print it: `#`–`###` headings with anchors, paragraphs, `-` and
+ *    `1.` lists (a numbered list keeps its number past a code block), GFM tables, `>` notes, fenced
+ *    code, `code`, **bold**, _italic_, links (https:, mailto:, /path, #anchor and relative pages).
  *  - Added (only where the core would have printed the text as it was): code fences with blank
- *    lines, `####`–`######`, `---` rules, images, nested and `*`/`+` lists, a list right after a
- *    line of text, `> [!NOTE]` alerts, `<br />`, front matter (`frontMatter()`). Without `legacy`
- *    also links to `#anchors` and relative pages, and numbered lists that start past 1.
+ *    lines and titles (```js app.js), `####`–`######`, `---` rules, images, nested and `*`/`+`
+ *    lists, a list right after a line of text, lists with blank lines between items or indented
+ *    blocks (code, tables, paragraphs) under an item, `> [!NOTE]` alerts, `<br />`, front matter
+ *    (`frontMatter()`).
  *  - Mintlify components, as Mintlify writes them (MDX, indented bodies, `cols={2}`):
  *    <Steps>/<Step title>, <Accordion title>/<AccordionGroup>, <Note>/<Tip>/<Info>/<Warning>/
  *    <Check>/<Danger>, <Card title href icon>/<CardGroup cols>, <Frame caption>, <Columns cols>,
- *    <Tabs>/<Tab title>, and raw <img>, <br>, <div style={{…}}>. A component's body is Markdown.
- *    No JavaScript: accordions are <details>, tabs are radio buttons.
+ *    <Tabs>/<Tab title>, <CodeGroup>, and raw <img>, <br>, <div style={{…}}>. A component's body is
+ *    Markdown; text after its closing tag on the same line carries on after it. In a line of text:
+ *    <Icon icon size color /> and <Tooltip tip href>…</Tooltip>. No JavaScript: accordions are
+ *    <details>, tabs and code groups are radio buttons, tooltips are title attributes.
+ *  - Icons (Card, Icon) come from the `icon` option; lib/docs-icons.ts makes one from lucide icons,
+ *    with Font Awesome's names (Mintlify's) mapped to lucide's.
  *
  * Input is trusted (your own docs): text is escaped, but the raw HTML above is passed through with
  * a short list of attributes and no javascript: URLs.
@@ -30,13 +35,9 @@ export const headingId = (text: string) => text.toLowerCase().replace(/[^\p{L}\p
 
 export interface MarkdownOptions {
   /**
-   * The core exactly as 0bridge's renderer printed it, quirks included: only `https:`, `mailto:` and
-   * `/path` links are links (`[x](#setup)` stays as written), and a numbered list that starts at 3
-   * (one split by a code block) is numbered from 1. Default false: anchors and relative links work
-   * and lists keep their numbers.
+   * SVG markup for `<Card icon="…">` and `<Icon icon="…" />` (Mintlify names Font Awesome or lucide
+   * icons): lucideIcons() in lib/docs-icons.ts. No icon when it returns nothing.
    */
-  legacy?: boolean;
-  /** SVG markup for `<Card icon="…">` (Mintlify names Font Awesome or lucide icons). No icon when it returns nothing. */
   icon?: (name: string) => string | undefined;
   /** Prefix for ids the renderer makes (tab groups), when several documents share a page. Default "md". */
   idPrefix?: string;
@@ -60,24 +61,49 @@ interface Ctx {
 
 // ── Inline ─────────────────────────────────────────────────
 
-const LINK = /\[([^\]]+)\]\(((?:https?:|mailto:)[^)\s]+|\/[^)\s]*)\)/g;
-const LINK_ANY = /\[([^\]]+)\]\(((?:https?:|mailto:)[^)\s]+|\/[^)\s]*|#[^)\s]*|(?![a-z][a-z0-9+.-]*:)[^)\s]+)\)/gi;
+const LINK = /\[([^\]]+)\]\(((?:https?:|mailto:)[^)\s]+|\/[^)\s]*|#[^)\s]*|(?![a-z][a-z0-9+.-]*:)[^)\s]+)\)/gi;
 /** `![alt](src)` and `![alt](src "title")`, after escaping (quotes are &#34;). */
 const IMAGE = /!\[([^\]]*)\]\(([^)\s]+)(?: &#34;([^)]*?)&#34;)?\)/g;
 
-/** Inline Markdown on escaped text: `code`, **bold**, _italic_, images, [links](url), <br />. */
-export function inline(s: string, o: Pick<MarkdownOptions, "legacy"> = {}): string {
+/** Inline Markdown on escaped text: `code`, **bold**, _italic_, images, [links](url), <br />, <Icon />, <Tooltip>. */
+export function inline(s: string, o: Pick<MarkdownOptions, "icon"> = {}): string {
   let out = s
     .replace(/`([^`]+)`/g, "<code>$1</code>")
     .replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>")
     .replace(/(^|\W)_([^_]+)_(?=\W|$)/g, "$1<i>$2</i>");
   if (out.includes("![")) out = out.replace(IMAGE, (_, alt: string, src: string, title?: string) => `<img src="${safeUrl(src)}" alt="${alt}"${title ? ` title="${title}"` : ""} loading="lazy">`);
-  out = out.replace(o.legacy ? LINK : LINK_ANY, '<a href="$2">$1</a>');
+  out = out.replace(LINK, '<a href="$2">$1</a>');
   if (out.includes("&#60;br")) out = out.replace(/&#60;br\s*\/?&#62;/g, "<br>");
+  if (out.includes("&#60;Icon") || out.includes("&#60;Tooltip")) out = out.split(/(<code>.*?<\/code>)/).map((part, i) => (i % 2 ? part : part.replace(JSX_INLINE, (_, name: string, attrs: string, body?: string) => jsxInline(name, attrs, body, o)))).join("");
   return out;
 }
 
+/** <Icon … /> and <Tooltip …>…</Tooltip> in escaped text (quotes are &#34;). */
+const JSX_ATTR = String.raw`\s+[A-Za-z]+(?:=(?:&#34;.*?&#34;|&#39;.*?&#39;|\{[^}]*\}))?`;
+const JSX_INLINE = new RegExp(String.raw`&#60;(Icon|Tooltip)((?:${JSX_ATTR})*)\s*(?:\/&#62;|&#62;(.*?)&#60;\/\1&#62;)`, "g");
+
+function jsxInline(name: string, attrs: string, body: string | undefined, o: Pick<MarkdownOptions, "icon">): string {
+  const a: Record<string, string> = {};
+  for (const m of attrs.matchAll(/([A-Za-z]+)(?:=(?:&#34;(.*?)&#34;|&#39;(.*?)&#39;|\{(.*?)\}))?/g)) a[m[1]!] = (m[2] ?? m[3] ?? m[4] ?? "true").replace(/^(&#34;|&#39;)(.*)\1$/, "$2").trim();
+  if (name === "Icon") {
+    const svg = a.icon && o.icon?.(a.icon);
+    if (!svg) return "";
+    const css = [/^\d+$/.test(a.size ?? "") ? `font-size:${a.size}px` : "", a.color ? `color:${a.color}` : ""].filter(Boolean).join(";");
+    return `<span class="ic"${css ? ` style="${css}"` : ""}>${svg}</span>`;
+  }
+  const tip = a.tip ? ` title="${a.tip}"` : "";
+  return a.href ? `<a class="tt" href="${safeUrl(a.href)}"${tip}>${body ?? ""}</a>` : `<span class="tt"${tip} tabindex="0">${body ?? ""}</span>`;
+}
+
 // ── Blocks ─────────────────────────────────────────────────
+
+/** A fence's info string, "js app.js {1-3}": the language and the title (Mintlify's file name or tab label). */
+const fenceInfo = (info: string) => {
+  const [lang = "", ...rest] = info.replace(/\{[^}]*\}/g, "").trim().split(/\s+/);
+  return { lang, title: rest.join(" ").replace(/^title=/, "").replace(/^(["'])(.*)\1$/, "$2") };
+};
+/** A code block; with a title, shown above the code (DOCS_CSS.extra). */
+const pre = (code: string, title = "") => `<pre${title ? ` data-title="${escape(title)}"` : ""}><code>${escape(code)}</code></pre>`;
 
 /** A table row's cells; `\|` is a literal pipe. */
 const cells = (line: string) =>
@@ -122,6 +148,53 @@ function list(lines: string[], c: Ctx): string | null {
   return `${intro.length ? `<p>${inline(escape(intro.join(" ")), c.o)}</p>\n` : ""}${html(root.kids)}`;
 }
 
+/**
+ * A list starting at src[i] whose items are apart (blank lines between them) or hold indented blocks
+ * under them (code, tables, more paragraphs): one list, each item's content rendered as Markdown.
+ * Null for a list without blank lines, which blocks() takes.
+ */
+function looseList(src: string, i: number, c: Ctx): { html: string; end: number } | null {
+  const lines = src.slice(i).split("\n");
+  const first = ITEM.exec(lines[0]!)!;
+  const base = first[1]!.length,
+    ordered = /\d/.test(first[2]!);
+  const item = (l: string) => {
+    const m = ITEM.exec(l);
+    return m && m[1]!.length === base && /\d/.test(m[2]!) === ordered ? m : null;
+  };
+  let n = 1,
+    loose = false;
+  while (n < lines.length) {
+    const l = lines[n]!;
+    if (l === "") {
+      let k = n + 1;
+      while (lines[k] === "") k++;
+      const next = lines[k];
+      if (next === undefined || !(item(next) || /^ */.exec(next)![0].length > base)) break;
+      loose = true;
+      n = k;
+    } else if (/^(```|<)/.test(l)) break;
+    else n++;
+  }
+  if (!loose) return null;
+  const items: { indent: number; lines: string[] }[] = [];
+  for (const l of lines.slice(0, n)) {
+    const m = item(l);
+    if (m) items.push({ indent: m[0].length - m[3]!.length, lines: [m[3]!] });
+    else {
+      const it = items.at(-1)!;
+      it.lines.push(l.slice(Math.min(it.indent, /^ */.exec(l)![0].length)));
+    }
+  }
+  const html = items.map((it) => {
+    const h = render(it.lines.join("\n"), c);
+    return `<li>${!h.includes("\n") && h.startsWith("<p>") && h.indexOf("<p>", 1) < 0 ? h.slice(3, -4) : h}</li>`;
+  });
+  const start = ordered ? Number.parseInt(first[2]!, 10) : 1;
+  const tag = ordered ? "ol" : "ul";
+  return { html: `<${tag}${start !== 1 ? ` start="${start}"` : ""}>${html.join("")}</${tag}>`, end: Math.min(src.length, i + lines.slice(0, n).join("\n").length + 1) };
+}
+
 const ALERT = /^> ?\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\] *$/i;
 const ALERT_KIND: Record<string, string> = { note: "note", tip: "tip", important: "info", warning: "warning", caution: "danger" };
 
@@ -144,7 +217,7 @@ function blocks(md: string, c: Ctx): string[] {
         out.push(callout(ALERT_KIND[alert[1]!.toLowerCase()]!, render(lines.slice(1).map((l) => l.replace(/^> ?/, "")).join("\n"), c)));
       } else out.push(`<blockquote class="callout">${inline(escape(lines.map((l) => l.replace(/^> ?/, "")).join(" ")), c.o)}</blockquote>`);
     } else if (lines.every((l) => /^\d+\. /.test(l))) {
-      const n = c.o.legacy ? 1 : Number.parseInt(lines[0]!, 10);
+      const n = Number.parseInt(lines[0]!, 10);
       out.push(`<ol${n !== 1 ? ` start="${n}"` : ""}>${lines.map((l) => `<li>${inline(escape(l.replace(/^\d+\. /, "")), c.o)}</li>`).join("")}</ol>`);
     } else if (h && lines.length === 1) {
       const n = h[1]!.length,
@@ -343,6 +416,18 @@ function component(t: Tag, body: string | null, c: Ctx): string {
       c.tabs = outer;
       return html;
     }
+    case "CodeGroup": {
+      // Each fence a tab, labelled with its title or language.
+      const name = `${c.o.idPrefix ?? "md"}-tabs-${++c.ids}`;
+      const codes = [...(body ?? "").matchAll(/^```([^\n]*)\n([\s\S]*?)\n?```[ \t]*$/gm)];
+      return `<div class="tabs codes">${codes
+        .map((m, k) => {
+          const f = fenceInfo(m[1]!);
+          const id = `${name}-${k + 1}`;
+          return `<input type="radio" name="${name}" id="${id}"${k ? "" : " checked"}><label for="${id}">${escape(f.title || f.lang || "Code")}</label><div class="tab">${pre(m[2]!)}</div>`;
+        })
+        .join("")}</div>`;
+    }
     case "Tab": {
       if (!c.tabs) return md(body);
       const id = `${c.tabs.name}-${++c.tabs.n}`;
@@ -354,13 +439,15 @@ function component(t: Tag, body: string | null, c: Ctx): string {
   }
 }
 
-const COMPONENTS = new Set(["Steps", "Step", "AccordionGroup", "Accordion", "Expandable", "Note", "Tip", "Info", "Warning", "Check", "Danger", "CardGroup", "Card", "Columns", "Frame", "Tabs", "Tab"]);
+/** Components that sit in a line of text (inline()), even at the start of one. */
+const INLINE = new Set(["Icon", "Tooltip"]);
+const COMPONENTS = new Set(["Steps", "Step", "AccordionGroup", "Accordion", "Expandable", "Note", "Tip", "Info", "Warning", "Check", "Danger", "CardGroup", "Card", "Columns", "Frame", "Tabs", "Tab", "CodeGroup"]);
 
 /** A component or HTML element starting at src[i], to its closing tag (same-name tags nest). */
 function element(src: string, i: number): { tag: Tag; body: string | null; end: number } | null {
   const t = readTag(src, i);
   if (!t) return null;
-  const known = /^[A-Z]/.test(t.name) ? true : HTML_TAGS.has(t.name);
+  const known = /^[A-Z]/.test(t.name) ? !INLINE.has(t.name) : HTML_TAGS.has(t.name);
   if (!known) return null;
   if (t.selfClosing || VOID.has(t.name)) return { tag: t, body: null, end: t.end };
   const re = new RegExp(`<(/?)${t.name}(?=[\\s/>])`, "g");
@@ -416,9 +503,10 @@ function render(md: string, c: Ctx): string {
         const next = end < 0 ? src.length : end;
         const blankAfter = next >= src.length || src[next + 1] === "\n";
         const startsBlock = text.length === 0 || text.at(-1) === "";
-        if (!(startsBlock && blankAfter && !body.includes("\n\n") && /^```$/.test(src.slice(eol + close + 1, next)))) c.extended = true;
+        const { title } = fenceInfo(line.slice(3));
+        if (title || !(startsBlock && blankAfter && !body.includes("\n\n") && /^```$/.test(src.slice(eol + close + 1, next)))) c.extended = true;
         flush();
-        out.push(`<pre><code>${escape(body)}</code></pre>`);
+        out.push(pre(body, title));
         i = next + 1;
         continue;
       }
@@ -430,6 +518,17 @@ function render(md: string, c: Ctx): string {
       i += comment[0].length;
       continue;
     }
+    // A list with blank lines between its items or blocks under them (a tight one goes to blocks()).
+    if (lead < 4 && (text.length === 0 || text.at(-1) === "") && ITEM.test(line)) {
+      const l = looseList(src, i, c);
+      if (l) {
+        c.extended = true;
+        flush();
+        out.push(l.html);
+        i = l.end;
+        continue;
+      }
+    }
     if (line[lead] === "<") {
       const el = element(src, i + lead);
       if (el) {
@@ -437,16 +536,18 @@ function render(md: string, c: Ctx): string {
         flush();
         const body = el.body === null ? null : dedent(el.body);
         out.push(/^[A-Z]/.test(el.tag.name) ? component(el.tag, body, c) : htmlTag(el.tag, body, c));
-        const end = src.indexOf("\n", el.end);
-        i = end < 0 ? src.length : end + 1;
+        // Text after the closing tag on its line carries on as the next line.
+        i = el.end;
+        while (src[i] === " " || src[i] === "\t") i++;
+        if (src[i] === "\n") i++;
         continue;
       }
     }
+    if (line.includes("<Icon") || line.includes("<Tooltip")) c.extended = true;
     text.push(line);
     i = eol + 1;
   }
   flush();
-  if (!out.length && c.o.legacy) out.push(...blocks("", c));
   return out.join("\n");
 }
 
@@ -516,9 +617,9 @@ export const menuPages = (groups: DocGroup[]): DocLink[] => {
 };
 
 /** "On this page": a link to each `##` heading (outside code). */
-export function tocLinks(md: string, o: Pick<MarkdownOptions, "legacy"> = {}): string {
+export function tocLinks(md: string): string {
   const prose = md.replace(/^```[^\n]*\n[\s\S]*?\n```[ \t]*$/gm, "");
-  return [...prose.matchAll(/^## (.+)$/gm)].map((m) => `<a href="#${headingId(m[1]!)}">${inline(escape(m[1]!), o)}</a>`).join("");
+  return [...prose.matchAll(/^## (.+)$/gm)].map((m) => `<a href="#${headingId(m[1]!)}">${inline(escape(m[1]!))}</a>`).join("");
 }
 
 /** Previous and next page cards. */

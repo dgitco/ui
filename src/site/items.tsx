@@ -292,14 +292,16 @@ const [theme, setTheme] = useTheme(); // "system" | "light" | "dark"`,
     title: "Docs",
     kind: "foundation",
     summary:
-      "A docs site from Markdown, as HTML strings: no React needed, so it runs in a Worker too. Mintlify's components (Steps, Accordion, Note/Tip/Warning, Card, Frame, Columns, Tabs) without JavaScript, the side menu, On this page, previous/next, llms.txt, and the styles as strings or docs.css.",
+      "A docs site from Markdown, as HTML strings: no React needed, so it runs in a Worker too. Mintlify's components (Steps, Accordion, Note/Tip/Warning, Card, Frame, Columns, Tabs, CodeGroup, Icon, Tooltip) without JavaScript, lucide icons under Font Awesome's names, the side menu, On this page, previous/next, llms.txt, and the styles as strings or docs.css.",
     preview: () => <DocsDemo />,
     frame: 640,
     usage: `import { DOCS_SCRIPT, docMenu, docsLayout, frontMatter, renderMarkdown, tocLinks } from "@/lib/docs";
 import { docsStyle } from "@/lib/docs-css";
+import { lucideIcons } from "@/lib/docs-icons";
+import { House, Settings } from "lucide"; // docIcons(body) lists the ones a page needs
 
 const { data, body } = frontMatter(mdx);
-const page = renderMarkdown(body, { icon: (name) => icons[name] });
+const page = renderMarkdown(body, { icon: lucideIcons({ House, Settings }) }); // icon="gear" → Settings
 const html =
   docsStyle({ tokens: true }) + // DGit colors; leave out tokens if you define --fg, --bg, --line…
   docsLayout({ menu: docMenu(groups, path), title: data.title, article: page.html, toc: tocLinks(body) }) +

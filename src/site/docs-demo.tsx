@@ -1,5 +1,7 @@
 import { afterLede, docMenu, docsLayout, prevNext, renderMarkdown, tocLinks, updatedLine } from "@/registry/dgit/lib/docs";
 import { DOCS_CSS } from "@/registry/dgit/lib/docs-css";
+import { lucideIcons } from "@/registry/dgit/lib/docs-icons";
+import { Image, MessagesSquare, Settings } from "lucide";
 
 const PAGE = `# Install the kiosk
 
@@ -23,23 +25,39 @@ Everything to have ready on the day, and what happens when the installer comes.
 
 ## Set up the app
 
-<Tabs>
-  <Tab title="macOS">
-    \`\`\`sh
-    brew install acme
-    \`\`\`
-  </Tab>
-  <Tab title="Linux">
-    \`\`\`sh
-    curl -fsSL https://acme.dev/install | sh
-    \`\`\`
-  </Tab>
-</Tabs>
+<CodeGroup>
+\`\`\`sh macOS
+brew install acme
+\`\`\`
+
+\`\`\`sh Linux
+curl -fsSL https://acme.dev/install | sh
+\`\`\`
+</CodeGroup>
+
+Then open <Icon icon="gear" /> **Settings** and pick the <Tooltip tip="The machine customers stand at">kiosk</Tooltip>:
+
+1. Choose the shop.
+
+   \`\`\`json kiosk.json
+   { "shop": "seoul-1" }
+   \`\`\`
+
+2. Press **Pair**. The code on the kiosk's screen is good for 5 minutes.
 
 | Part | What it does |
 | --- | --- |
 | **Kiosk** | Takes the photos |
 | **Dashboard** | Where you change prices and frames |
+
+<Tabs>
+  <Tab title="Card">
+    Customers tap their card on the reader.
+  </Tab>
+  <Tab title="QR">
+    Customers scan the code with their bank app.
+  </Tab>
+</Tabs>
 
 <Warning>
   Don't unplug the printer while it prints.
@@ -61,16 +79,13 @@ Everything to have ready on the day, and what happens when the installer comes.
   <Card title="Frames" icon="image" href="#">
     Upload the frames customers pick.
   </Card>
-  <Card title="Support" icon="chat" href="#">
+  <Card title="Support" icon="comments" href="#">
     We answer in the chat.
   </Card>
 </CardGroup>`;
 
-const ICON = (d: string) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
-const ICONS: Record<string, string> = {
-  image: ICON('<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>'),
-  chat: ICON('<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>'),
-};
+/** Font Awesome names as Mintlify writes them (gear, comments), lucide's icons; only these three are bundled. */
+const icon = lucideIcons({ Image, MessagesSquare, Settings });
 
 const GROUPS = [
   { name: "Start", pages: [{ href: "#welcome", title: "Welcome" }, { href: "#install", title: "Install the kiosk" }] },
@@ -79,7 +94,7 @@ const GROUPS = [
 
 /** A docs page as lib/docs.ts writes it, with docs.css's rules (DGit colors). */
 export function DocsDemo() {
-  const r = renderMarkdown(PAGE, { icon: (n) => ICONS[n], idPrefix: "demo" });
+  const r = renderMarkdown(PAGE, { icon, idPrefix: "demo" });
   const article = afterLede(r.html, updatedLine("2026-10-13")) + prevNext({ href: "#welcome", title: "Welcome" }, { href: "#frames", title: "Frames" });
   const html = docsLayout({ menu: docMenu(GROUPS, "#install"), title: "Install the kiosk", article, toc: tocLinks(PAGE) });
   return (

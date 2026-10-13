@@ -10,7 +10,7 @@ Site with previews, install commands, and source: **https://ui.dgit.co**
 |---|---|
 | `theme` | Neutral gray scale in light and dark, shadcn's color names on it, a type scale |
 | `use-theme` | System, light, or dark, saved and applied before first paint |
-| `docs` | Docs pages as HTML strings, no framework: Markdown with Mintlify's components (Steps, Accordion, callouts, Card, Frame, Columns, Tabs), the side menu, On this page, previous/next, llms.txt; styles as strings and `docs.css` |
+| `docs` | Docs pages as HTML strings, no framework: Markdown with Mintlify's components (Steps, Accordion, callouts, Card, Frame, Columns, Tabs, CodeGroup, Icon, Tooltip), lucide icons under Font Awesome's names (`lib/docs-icons.ts`), the side menu, On this page, previous/next, llms.txt; styles as strings and `docs.css` |
 | `button` | Pill buttons, 40px tall by default |
 | `menu` | A floating panel from a trigger, no positioning library |
 | `account-menu` | Avatar button: who's signed in, a theme switch, your links, log out |
@@ -44,10 +44,10 @@ Import `dgit.css` after Tailwind in your main CSS (`@import "./dgit.css";`), and
 
 | Path | What |
 |---|---|
-| `registry/dgit/` | The kit: `styles/dgit.css` (theme), `lib/theme.ts`, `lib/docs.ts` and `lib/docs-css.ts` (docs pages; `styles/docs.css` is generated from `docs-css.ts` by `scripts/docs-css.ts`), `ui/*` (components), `blocks/*` (screens) |
+| `registry/dgit/` | The kit: `styles/dgit.css` (theme), `lib/theme.ts`, `lib/docs.ts`, `lib/docs-icons.ts` and `lib/docs-css.ts` (docs pages; `styles/docs.css` is generated from `docs-css.ts` by `scripts/docs-css.ts`), `ui/*` (components), `blocks/*` (screens) |
 | `registry.json` | The item list. `bun run registry` builds it into `public/r/<item>.json` |
 | `src/` | The showcase site (Vite, React, Tailwind v4). Previews use the `registry/` sources directly |
-| `test/` | `bun run test`: the docs item's renderer (the core as 0bridge printed it, the Mintlify components) |
+| `test/` | `bun run test`: the docs item's renderer (the core as 0bridge prints it, the Mintlify components, icons) |
 | `scripts/seo.ts` | After the build, writes a static HTML page per route (title, description, structured data, text) plus `robots.txt`, `sitemap.xml`, and `llms.txt`, so crawlers that don't run JavaScript can read the site |
 | `worker/` | Runs only for `/r/*` and counts registry fetches per day and item. The counts are private |
 
