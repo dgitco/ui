@@ -13,6 +13,7 @@
 /* The docs' color names, from the DGit theme. Inside .doc and .docs, --muted and --card are the
    docs' secondary text and fill colors, not shadcn's. */
 .doc,.docs{--fg:var(--foreground);--bg:var(--background);--line:var(--border);--muted:var(--muted-foreground);--card:var(--secondary);--card2:hsla(var(--dgit-gray-200),1);--hover:var(--accent);--dim:hsla(var(--dgit-gray-500),1)}
+.doc ul{list-style:disc}.doc ol{list-style:decimal}
 
 /* Focus ring, reduced motion */
 a:focus-visible,button:focus-visible,summary:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--fg);outline-offset:2px;border-radius:6px}
@@ -86,6 +87,11 @@ a:focus-visible,button:focus-visible,summary:focus-visible,[tabindex]:focus-visi
 .doc hr{margin:32px 0;border:0;border-top:1px solid var(--line)}
 .doc img{max-width:100%;height:auto}
 .doc li>ul,.doc li>ol{margin:4px 0 0}
+.doc li>p,.doc li>pre,.doc li>.tbl{margin:8px 0}.doc li>:first-child{margin-top:0}.doc li>:last-child{margin-bottom:0}
+.doc pre[data-title]{position:relative;padding-top:50px}
+.doc pre[data-title]::before{content:attr(data-title);position:absolute;top:0;left:0;right:0;padding:9px 18px;border-bottom:1px solid var(--line);font:500 12.5px/1.5 "Geist Mono",ui-monospace,monospace;color:var(--muted);white-space:nowrap}
+.doc .ic{display:inline-flex;vertical-align:-.125em}.doc .ic svg{width:1em;height:1em}
+.doc .tt{text-decoration:underline dotted var(--dim);text-underline-offset:3px;cursor:help}
 .doc .note{display:flex;gap:12px;margin:0 0 16px;padding:12px 16px;border-radius:14px;background:var(--card);font-size:15px;line-height:1.6}
 .doc .note>svg{flex:none;margin-top:4px;color:var(--muted)}
 .doc .note>div{flex:1;min-width:0}.doc .note>div>:last-child{margin-bottom:0}.doc .note code{background:var(--bg)}
@@ -120,6 +126,7 @@ a:focus-visible,button:focus-visible,summary:focus-visible,[tabindex]:focus-visi
 .doc .tabs>input:focus-visible+label{outline:2px solid var(--fg);outline-offset:-4px;border-radius:10px}
 .doc .tab{display:none;order:1;width:100%;padding:16px 18px;border-top:1px solid var(--line)}.doc .tab>:last-child{margin-bottom:0}
 .doc .tabs>input:checked+label+.tab{display:block}
+.doc .codes{background:var(--card)}.doc .codes>.tab{padding:0}.doc .codes pre{margin:0;border-radius:0 0 13px 13px}
 .dgrp summary{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-radius:8px;color:var(--muted);list-style:none;cursor:pointer}
 .dgrp summary::-webkit-details-marker{display:none}
 .dgrp summary:hover{color:var(--fg)}.dgrp summary svg{transition:transform .2s}.dgrp[open]>summary svg{transform:rotate(180deg)}

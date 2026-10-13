@@ -11,7 +11,7 @@
 | `registry/dgit/` | 킷 원본. `styles/dgit.css`(테마), `lib/theme.ts`, `lib/docs.ts`·`lib/docs-css.ts`(문서 사이트, 아래), `ui/*`(컴포넌트), `blocks/*`(화면 단위) |
 | `registry.json` | 항목 목록. `bun run registry`가 `public/r/<항목>.json`으로 빌드 |
 | `skills/dgit-ui/SKILL.md` | 에이전트용 스킬. 빌드 때 `public/skill.md`로 복사되어 사이트에서 받을 수 있다 |
-| `test/` | `bun run test`. docs 항목 렌더러 검사(0bridge가 찍던 그대로인지, Mintlify 부품) |
+| `test/` | `bun run test`. docs 항목 렌더러 검사(0bridge 핵심 출력, Mintlify 부품, 아이콘) |
 | `src/` | 쇼케이스 사이트 (Vite + React + Tailwind v4). 미리보기는 `registry/` 원본을 그대로 쓴다 |
 | `scripts/seo.ts` | 빌드 뒤 페이지마다 정적 HTML(제목·설명·구조화 데이터·본문)과 `robots.txt`, `sitemap.xml`, `llms.txt`를 만든다. 자바스크립트를 안 돌리는 크롤러도 읽을 수 있게 |
 | `worker/` | `/r/*`에서만 도는 워커. 레지스트리 요청 수를 날짜·항목별로 센다. 숫자는 비공개이고 사이트에는 안 나온다 |
@@ -35,11 +35,12 @@ React 없이 HTML 문자열로 문서 페이지를 만든다. 워커(0bridge)에
 
 | 파일 | 내용 |
 |---|---|
-| `lib/docs.ts` | `renderMarkdown()`/`markdown()`: 마크다운 + Mintlify 부품(`<Steps>`, `<Accordion>`, `<Note>`/`<Tip>`/`<Warning>`, `<Card>`, `<Frame>`, `<Columns>`, `<Tabs>`, `<img style={{…}}>`), JS 없음. `frontMatter()`, `lede()`, `docMenu()`, `tocLinks()`, `prevNext()`, `docsLayout()`, `askRow()`, `DOCS_SCRIPT`, `llmsTxt()`, `llmsFullTxt()` |
+| `lib/docs.ts` | `renderMarkdown()`/`markdown()`: 마크다운 + Mintlify 부품(`<Steps>`, `<Accordion>`, `<Note>`/`<Tip>`/`<Warning>`, `<Card>`, `<Frame>`, `<Columns>`, `<Tabs>`, `<CodeGroup>`, 글 속 `<Icon>`·`<Tooltip>`, `<img style={{…}}>`), JS 없음. 펜스 제목(```` ```js app.js ````), 빈 줄로 띄운 목록·항목 아래 들여 쓴 코드/표도 한 목록으로. `frontMatter()`, `lede()`, `docMenu()`, `tocLinks()`, `prevNext()`, `docsLayout()`, `askRow()`, `DOCS_SCRIPT`, `llmsTxt()`, `llmsFullTxt()` |
+| `lib/docs-icons.ts` | lucide 아이콘을 SVG 문자열로: `lucideIcons({ House, Settings })`를 `icon` 옵션에. `FA_TO_LUCIDE`(Mintlify가 쓰는 Font Awesome 이름 → lucide, 포토이토 가이드 전부 포함), `docIcons(md)`(페이지에 필요한 lucide import 목록). `lucide`에서 쓰는 아이콘만 import하니 번들이 커지지 않는다 |
 | `lib/docs-css.ts` | 스타일 문자열 `DOCS_CSS`(tokens, focus, content, article, layout, extra)와 `docsStyle()`. 원본은 이 파일 |
 | `styles/docs.css` | 같은 규칙을 파일로(`bun run registry`가 `docs-css.ts`에서 만든다). dgit.css 다음에 import |
 
-0bridge 문서의 출력은 `{ legacy: true }`로 바이트 단위로 같다(그쪽 PR에서 235개 페이지 비교). 색 이름은 0bridge 것(`--fg`, `--bg`, `--line`, `--muted`, `--card`, `--card2`, `--hover`, `--dim`)을 쓰고, DGit 테마에서는 `tokens`가 `--foreground`, `--background`, `--border`, `--muted-foreground`, `--secondary`, gray-200, `--accent`, gray-500으로 잇는다.
+0bridge 문서가 이 렌더러로 찍힌다(`#앵커` 링크, 코드 블록 뒤에도 이어지는 번호 목록 포함). 색 이름은 0bridge 것(`--fg`, `--bg`, `--line`, `--muted`, `--card`, `--card2`, `--hover`, `--dim`)을 쓰고, DGit 테마에서는 `tokens`가 `--foreground`, `--background`, `--border`, `--muted-foreground`, `--secondary`, gray-200, `--accent`, gray-500으로 잇는다.
 
 ## 에이전트 스킬
 

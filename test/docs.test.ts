@@ -1,14 +1,14 @@
-// The docs item (registry/dgit/lib/docs.ts): the core as 0bridge printed it, what it adds, and
-// Mintlify's components as the Photoito guide writes them. `bun test`.
+// The docs item (registry/dgit/lib/docs.ts, docs-icons.ts): the core as 0bridge prints it, what it
+// adds, and Mintlify's components as the Photoito guide writes them. `bun test`.
 import { expect, test } from "bun:test";
 import { DOCS_CSS, docsStyle } from "../registry/dgit/lib/docs-css";
 import { docMenu, docsLayout, frontMatter, inline, lede, llmsTxt, markdown, menuPages, renderMarkdown, tocLinks } from "../registry/dgit/lib/docs";
+import { FA_TO_LUCIDE, docIcons, lucideExport, lucideIcons, svgIcon } from "../registry/dgit/lib/docs-icons";
+import * as lucide from "lucide";
 
-const legacy = (md: string) => renderMarkdown(md, { legacy: true });
-
-test("core: headings, lists, tables, notes and code, as 0bridge printed them", () => {
+test("core: headings, lists, tables, notes and code, as 0bridge prints them", () => {
   const md = "# Title\n\nLede with `code`, **bold**, _it_ and [a link](/docs).\n\n## Over SSH\n\n- one\n- two\n\n1. first\n2. second\n\n> Check the date.\n> It moves.\n\n```sh\n0b setup\n```\n\n| Client | Level |\n|---|---|\n| `Claude` | Full |\n| A \\| B | <b> |";
-  const r = legacy(md);
+  const r = renderMarkdown(md);
   expect(r.extended).toBe(false);
   expect(r.html).toBe(
     [
@@ -26,16 +26,14 @@ test("core: headings, lists, tables, notes and code, as 0bridge printed them", (
   expect(markdown("| a | b |\n| c | d |")).not.toContain("<table>");
 });
 
-test("legacy keeps 0bridge's quirks; without it anchors link and lists keep their numbers", () => {
-  expect(legacy("See [Setup](#setup).").html).toBe("<p>See [Setup](#setup).</p>");
+test("anchors and relative pages link; a list split by code keeps its numbers", () => {
   expect(markdown("See [Setup](#setup) and [next](./next).")).toBe('<p>See <a href="#setup">Setup</a> and <a href="./next">next</a>.</p>');
-  expect(legacy("3. third").html).toBe("<ol><li>third</li></ol>");
-  expect(markdown("3. third")).toBe('<ol start="3"><li>third</li></ol>');
+  expect(markdown("1. one\n2. two\n\n```\nx\n```\n\n3. third")).toBe('<ol><li>one</li><li>two</li></ol>\n<pre><code>x</code></pre>\n<ol start="3"><li>third</li></ol>');
   expect(markdown("[x](javascript:alert(1))")).not.toContain("<a");
 });
 
 test("added: fences with blank lines, deep headings, rules, images, nested lists", () => {
-  const r = legacy("```js\na\n\nb\n```\n\n#### Deep\n\n---\n\n![A cat](/cat.png \"Cat\")\n\nIntro:\n- a\n  - a1\n  - a2\n- b\n\n* star\n* list");
+  const r = renderMarkdown("```js\na\n\nb\n```\n\n#### Deep\n\n---\n\n![A cat](/cat.png \"Cat\")\n\nIntro:\n- a\n  - a1\n  - a2\n- b\n\n* star\n* list");
   expect(r.extended).toBe(true);
   expect(r.html).toBe(
     [
@@ -132,6 +130,53 @@ test("front matter, lede, On this page, menu, llms.txt", () => {
   expect(menuPages(groups).map((p) => p.href)).toEqual(["/a", "/b"]);
   expect(docsLayout({ menu: "M", title: "T", article: "A", toc: "" })).toContain('<article class="doc">A</article></div>');
   expect(llmsTxt({ name: "X", summary: "S", sections: [{ name: "Docs", links: [{ title: "A", url: "https://x/a.md" }] }] })).toBe("# X\n\n> S\n\n## Docs\n\n- [A](https://x/a.md)\n");
+});
+
+test("lists with blank lines between items or blocks under them are one list", () => {
+  const r = renderMarkdown("1. Make the webhook:\n\n   ```\n   0b webhook add\n   ```\n\n2. Paste the token.\n\n   | a | b |\n   | --- | --- |\n   | 1 | 2 |\n\n3. Done.\n\nAfter.");
+  expect(r.extended).toBe(true);
+  expect(r.html).toBe(
+    '<ol><li><p>Make the webhook:</p>\n<pre><code>0b webhook add</code></pre></li><li><p>Paste the token.</p>\n<div class="tbl"><table><thead><tr><th>a</th><th>b</th></tr></thead><tbody><tr><td>1</td><td>2</td></tr></tbody></table></div></li><li>Done.</li></ol>\n<p>After.</p>',
+  );
+  expect(markdown("- a\n\n- b\n- c")).toBe("<ul><li>a</li><li>b</li><li>c</li></ul>");
+  expect(markdown("4. four\n\n5. five")).toBe('<ol start="4"><li>four</li><li>five</li></ol>');
+  // a tight list is the core's, as before
+  expect(renderMarkdown("- a\n- b\n\nText.").extended).toBe(false);
+});
+
+test("text after a closing tag on the same line is kept", () => {
+  expect(markdown("<Note>Saved.</Note> Then reload.\nIt takes a second.")).toMatch(/<\/div><\/div>\n<p>Then reload. It takes a second.<\/p>$/);
+  expect(markdown('<img src="/a.png" alt="a" /> The kiosk.')).toBe('<img src="/a.png" alt="a">\n<p>The kiosk.</p>');
+});
+
+test("code: titles, CodeGroup tabs", () => {
+  expect(renderMarkdown("```python sync.py\nprint(1)\n```")).toEqual({ html: '<pre data-title="sync.py"><code>print(1)</code></pre>', extended: true });
+  expect(renderMarkdown("```python\nprint(1)\n```")).toEqual({ html: "<pre><code>print(1)</code></pre>", extended: false });
+  expect(markdown("<CodeGroup>\n```bash npm\nnpm i x\n```\n\n```sh\nbun add x\n```\n</CodeGroup>", { idPrefix: "g" })).toBe(
+    '<div class="tabs codes"><input type="radio" name="g-tabs-1" id="g-tabs-1-1" checked><label for="g-tabs-1-1">npm</label><div class="tab"><pre><code>npm i x</code></pre></div><input type="radio" name="g-tabs-1" id="g-tabs-1-2"><label for="g-tabs-1-2">sh</label><div class="tab"><pre><code>bun add x</code></pre></div></div>',
+  );
+});
+
+test("Icon and Tooltip in a line of text; code stays code", () => {
+  const icon = (n: string) => (n === "gear" ? "<svg/>" : undefined);
+  const r = renderMarkdown('<Icon icon="gear" size={20} /> Press <Tooltip tip="It\'s the cog">Settings</Tooltip>, not `<Icon icon="gear" />`. <Icon icon="nope" />', { icon });
+  expect(r.extended).toBe(true);
+  expect(r.html).toBe('<p><span class="ic" style="font-size:20px"><svg/></span> Press <span class="tt" title="It&#39;s the cog" tabindex="0">Settings</span>, not <code>&#60;Icon icon=&#34;gear&#34; /&#62;</code>. </p>');
+  expect(markdown('<Tooltip tip="Docs" href="/docs">API</Tooltip>')).toBe('<p><a class="tt" href="/docs" title="Docs">API</a></p>');
+});
+
+test("lucide icons by Font Awesome or lucide name", () => {
+  expect(svgIcon([["path", { d: "M1 1" }]], { size: 20 })).toBe(
+    '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 1"/></svg>',
+  );
+  const icon = lucideIcons({ Settings: lucide.Settings, House: lucide.House });
+  expect(icon("gear")).toBe(svgIcon(lucide.Settings));
+  expect(icon("house")).toBe(svgIcon(lucide.House));
+  expect(icon("receipt")).toBeUndefined();
+  expect(lucideExport("rotate-ccw-clock")).toBe("RotateCcwClock");
+  expect(docIcons('<Card icon="gear" /><Card icon="clock-rotate-left"></Card><Icon icon="house" />')).toEqual(["House", "RotateCcwClock", "Settings"]);
+  // every name in the table is a lucide icon
+  for (const [fa, name] of Object.entries(FA_TO_LUCIDE)) expect((lucide as Record<string, unknown>)[lucideExport(name)], `${fa} → ${name}`).toBeDefined();
 });
 
 test("styles: sections are one rule a line between newlines; docsStyle puts them together", () => {
