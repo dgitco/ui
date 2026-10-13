@@ -8,9 +8,10 @@
 
 | 경로 | 내용 |
 |---|---|
-| `registry/dgit/` | 킷 원본. `styles/dgit.css`(테마), `lib/theme.ts`, `ui/*`(컴포넌트), `blocks/*`(화면 단위) |
+| `registry/dgit/` | 킷 원본. `styles/dgit.css`(테마), `lib/theme.ts`, `lib/docs.ts`·`lib/docs-css.ts`(문서 사이트, 아래), `ui/*`(컴포넌트), `blocks/*`(화면 단위) |
 | `registry.json` | 항목 목록. `bun run registry`가 `public/r/<항목>.json`으로 빌드 |
 | `skills/dgit-ui/SKILL.md` | 에이전트용 스킬. 빌드 때 `public/skill.md`로 복사되어 사이트에서 받을 수 있다 |
+| `test/` | `bun run test`. docs 항목 렌더러 검사(0bridge가 찍던 그대로인지, Mintlify 부품) |
 | `src/` | 쇼케이스 사이트 (Vite + React + Tailwind v4). 미리보기는 `registry/` 원본을 그대로 쓴다 |
 | `scripts/seo.ts` | 빌드 뒤 페이지마다 정적 HTML(제목·설명·구조화 데이터·본문)과 `robots.txt`, `sitemap.xml`, `llms.txt`를 만든다. 자바스크립트를 안 돌리는 크롤러도 읽을 수 있게 |
 | `worker/` | `/r/*`에서만 도는 워커. 레지스트리 요청 수를 날짜·항목별로 센다. 숫자는 비공개이고 사이트에는 안 나온다 |
@@ -28,6 +29,18 @@ npx shadcn add @dgit/theme @dgit/use-theme @dgit/account-menu @dgit/app-header
 
 메인 CSS에서 Tailwind 다음에 `@import "./dgit.css";`, `<head>`에 `themeScript`(`lib/theme`)를 인라인으로 넣는다. 자세한 건 사이트의 Docs.
 
+## 문서 사이트 (`@dgit/docs`)
+
+React 없이 HTML 문자열로 문서 페이지를 만든다. 워커(0bridge)에서도, 정적 생성기나 React 앱에서도 쓴다.
+
+| 파일 | 내용 |
+|---|---|
+| `lib/docs.ts` | `renderMarkdown()`/`markdown()`: 마크다운 + Mintlify 부품(`<Steps>`, `<Accordion>`, `<Note>`/`<Tip>`/`<Warning>`, `<Card>`, `<Frame>`, `<Columns>`, `<Tabs>`, `<img style={{…}}>`), JS 없음. `frontMatter()`, `lede()`, `docMenu()`, `tocLinks()`, `prevNext()`, `docsLayout()`, `askRow()`, `DOCS_SCRIPT`, `llmsTxt()`, `llmsFullTxt()` |
+| `lib/docs-css.ts` | 스타일 문자열 `DOCS_CSS`(tokens, focus, content, article, layout, extra)와 `docsStyle()`. 원본은 이 파일 |
+| `styles/docs.css` | 같은 규칙을 파일로(`bun run registry`가 `docs-css.ts`에서 만든다). dgit.css 다음에 import |
+
+0bridge 문서의 출력은 `{ legacy: true }`로 바이트 단위로 같다(그쪽 PR에서 235개 페이지 비교). 색 이름은 0bridge 것(`--fg`, `--bg`, `--line`, `--muted`, `--card`, `--card2`, `--hover`, `--dim`)을 쓰고, DGit 테마에서는 `tokens`가 `--foreground`, `--background`, `--border`, `--muted-foreground`, `--secondary`, gray-200, `--accent`, gray-500으로 잇는다.
+
 ## 에이전트 스킬
 
 `skills/dgit-ui/SKILL.md`를 각 도구의 스킬 폴더에 `dgit-ui/SKILL.md`로 두면 Claude Code, Codex, Cursor가 UI를 만들 때 이 킷을 쓴다. 0bridge를 쓰면 `0b`가 모든 도구에 맞춰 준다.
@@ -36,7 +49,8 @@ npx shadcn add @dgit/theme @dgit/use-theme @dgit/account-menu @dgit/app-header
 
 ```sh
 bun install
-bun run registry   # public/r, public/skill.md
+bun run registry   # styles/docs.css, public/r, public/skill.md
+bun run test       # docs 항목
 bun run dev        # http://localhost:5173
 bun run build      # 레지스트리 + 타입 검사 + 사이트
 bun run deploy     # Cloudflare (DGit 계정, ui.dgit.co). `0b profile use dgit`가 걸려 있어야 한다
@@ -46,7 +60,7 @@ bun run deploy     # Cloudflare (DGit 계정, ui.dgit.co). `0b profile use dgit`
 
 ## 출처
 
-로그인 화면과 상단 바는 0bridge에서, 메뉴·계정 메뉴·회색 단계는 Geist(Vercel 대시보드) 스타일을 실측해 다시 만들었다. 아이콘은 lucide, 글꼴은 Geist(SIL OFL).
+로그인 화면, 상단 바, 문서 페이지는 0bridge에서, 메뉴·계정 메뉴·회색 단계는 Geist(Vercel 대시보드) 스타일을 실측해 다시 만들었다. 아이콘은 lucide, 글꼴은 Geist(SIL OFL).
 
 ## 라이선스
 

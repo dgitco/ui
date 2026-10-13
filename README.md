@@ -10,6 +10,7 @@ Site with previews, install commands, and source: **https://ui.dgit.co**
 |---|---|
 | `theme` | Neutral gray scale in light and dark, shadcn's color names on it, a type scale |
 | `use-theme` | System, light, or dark, saved and applied before first paint |
+| `docs` | Docs pages as HTML strings, no framework: Markdown with Mintlify's components (Steps, Accordion, callouts, Card, Frame, Columns, Tabs), the side menu, On this page, previous/next, llms.txt; styles as strings and `docs.css` |
 | `button` | Pill buttons, 40px tall by default |
 | `menu` | A floating panel from a trigger, no positioning library |
 | `account-menu` | Avatar button: who's signed in, a theme switch, your links, log out |
@@ -43,9 +44,10 @@ Import `dgit.css` after Tailwind in your main CSS (`@import "./dgit.css";`), and
 
 | Path | What |
 |---|---|
-| `registry/dgit/` | The kit: `styles/dgit.css` (theme), `lib/theme.ts`, `ui/*` (components), `blocks/*` (screens) |
+| `registry/dgit/` | The kit: `styles/dgit.css` (theme), `lib/theme.ts`, `lib/docs.ts` and `lib/docs-css.ts` (docs pages; `styles/docs.css` is generated from `docs-css.ts` by `scripts/docs-css.ts`), `ui/*` (components), `blocks/*` (screens) |
 | `registry.json` | The item list. `bun run registry` builds it into `public/r/<item>.json` |
 | `src/` | The showcase site (Vite, React, Tailwind v4). Previews use the `registry/` sources directly |
+| `test/` | `bun run test`: the docs item's renderer (the core as 0bridge printed it, the Mintlify components) |
 | `scripts/seo.ts` | After the build, writes a static HTML page per route (title, description, structured data, text) plus `robots.txt`, `sitemap.xml`, and `llms.txt`, so crawlers that don't run JavaScript can read the site |
 | `worker/` | Runs only for `/r/*` and counts registry fetches per day and item. The counts are private |
 
@@ -53,7 +55,8 @@ Import `dgit.css` after Tailwind in your main CSS (`@import "./dgit.css";`), and
 
 ```sh
 bun install
-bun run registry   # public/r, public/skill.md
+bun run registry   # styles/docs.css, public/r, public/skill.md
+bun run test       # the docs item
 bun run dev        # http://localhost:5173
 bun run build      # registry, type check, site, SEO pages
 bun run deploy     # Cloudflare (ui.dgit.co)
@@ -63,7 +66,7 @@ Registry sources import the paths they'll have in a project: `@/lib/utils`, `@/r
 
 ## Credits
 
-The sign-in screen and top bar come from 0bridge; the menus, account menu, and gray scale were rebuilt from measurements of Geist (the Vercel dashboard style). Icons are lucide; the font is Geist (SIL OFL).
+The sign-in screen, top bar and docs pages come from 0bridge; the menus, account menu, and gray scale were rebuilt from measurements of Geist (the Vercel dashboard style). Icons are lucide; the font is Geist (SIL OFL).
 
 ## License
 

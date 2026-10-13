@@ -6,9 +6,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "registry": "shadcn build -o public/r && cp skills/dgit-ui/SKILL.md public/skill.md",
+    "registry": "bun scripts/docs-css.ts && shadcn build -o public/r && cp skills/dgit-ui/SKILL.md public/skill.md",
     "build": "bun run registry && tsc -b && vite build && bun scripts/seo.ts",
     "typecheck": "tsc -b",
+    "test": "bun test",
     "preview": "vite preview",
     "deploy": "bun run build && 0b exec -- wrangler deploy && bun scripts/indexnow.ts"
   },
