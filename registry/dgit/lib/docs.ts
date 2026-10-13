@@ -22,6 +22,8 @@
  *    <details>, tabs and code groups are radio buttons, tooltips are title attributes.
  *  - Icons (Card, Icon) come from the `icon` option; lib/docs-icons.ts makes one from lucide icons,
  *    with Font Awesome's names (Mintlify's) mapped to lucide's.
+ *  - Moving a site from Mintlify: `headingId: mintlifyHeadingId` keeps its section anchors, menu
+ *    groups take Mintlify's group icons (DocGroup.icon), and docsScript(labels) speaks the page's language.
  *
  * Input is trusted (your own docs): text is escaped, but the raw HTML above is passed through with
  * a short list of attributes and no javascript: URLs.
@@ -33,6 +35,20 @@ export const escape = (v: string) => v.replace(/[&<>"']/g, (ch) => `&#${ch.charC
 /** A heading's anchor: "Over SSH" → "over-ssh", "1. 처리 목적" → "1-처리-목적". */
 export const headingId = (text: string) => text.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-|-$/g, "");
 
+/**
+ * Mintlify's anchors, for the `headingId` option: each space a hyphen, other letters and signs kept
+ * (·, ×, 「」, %, ②), ASCII punctuation dropped, a closing parenthesis a space. "② 고르기" →
+ * "②-고르기", "회전 시간 · 세션: 얼마나" → "회전-시간-·-세션-얼마나". Checked on 250 headings of the
+ * Photoito guide against its Mintlify site.
+ */
+export const mintlifyHeadingId = (text: string) =>
+  text
+    .toLowerCase()
+    .replace(/\)/g, " ")
+    .replace(/[!-$&-,./:-@[-^`{-~]/g, "")
+    .trim()
+    .replace(/\s+/g, "-");
+
 export interface MarkdownOptions {
   /**
    * SVG markup for `<Card icon="…">` and `<Icon icon="…" />` (Mintlify names Font Awesome or lucide
@@ -43,6 +59,11 @@ export interface MarkdownOptions {
   idPrefix?: string;
   /** The heading anchor's label for screen readers. Default "Link to this section". */
   anchorLabel?: string;
+  /**
+   * A heading's id from its text. Default headingId(). A site moving from another tool passes that
+   * tool's rule, so links to its sections keep working (mintlifyHeadingId() for Mintlify).
+   */
+  headingId?: (text: string) => string;
 }
 
 export interface Rendered {
@@ -202,6 +223,7 @@ const ALERT_KIND: Record<string, string> = { note: "note", tip: "tip", important
 function blocks(md: string, c: Ctx): string[] {
   const out: string[] = [];
   const anchor = escape(c.o.anchorLabel ?? "Link to this section");
+  const slug = c.o.headingId ?? headingId;
   for (const block of md.split(/\n{2,}/)) {
     const lines = block.split("\n");
     const h = /^(#{1,3}) (.*)$/.exec(block);
@@ -221,7 +243,7 @@ function blocks(md: string, c: Ctx): string[] {
       out.push(`<ol${n !== 1 ? ` start="${n}"` : ""}>${lines.map((l) => `<li>${inline(escape(l.replace(/^\d+\. /, "")), c.o)}</li>`).join("")}</ol>`);
     } else if (h && lines.length === 1) {
       const n = h[1]!.length,
-        id = headingId(h[2]!);
+        id = escape(slug(h[2]!));
       out.push(n === 1 ? `<h1>${inline(escape(h[2]!), c.o)}</h1>` : `<h${n} id="${id}">${inline(escape(h[2]!), c.o)}<a class="hash" href="#${id}" aria-label="${anchor}">#</a></h${n}>`);
     } else if (lines.every((l) => l.startsWith("- "))) out.push(`<ul>${lines.map((l) => `<li>${inline(escape(l.slice(2)), c.o)}</li>`).join("")}</ul>`);
     else {
@@ -230,7 +252,7 @@ function blocks(md: string, c: Ctx): string[] {
       const lst = lines.some((l) => ITEM.test(l)) ? list(lines, c) : null;
       if (deep && lines.length === 1) {
         const n = deep[1]!.length,
-          id = headingId(deep[2]!);
+          id = escape(slug(deep[2]!));
         out.push(`<h${n} id="${id}">${inline(escape(deep[2]!), c.o)}<a class="hash" href="#${id}" aria-label="${anchor}">#</a></h${n}>`);
       } else if (lines.length === 1 && /^ {0,3}([-*_])( *\1){2,} *$/.test(block)) out.push("<hr>");
       else if (lst) out.push(lst);
@@ -592,6 +614,8 @@ export interface DocLink {
 }
 export interface DocGroup {
   name: string;
+  /** SVG markup shown before the name (svgIcon() in lib/docs-icons.ts), as Mintlify's group icons. */
+  icon?: string;
   /** Pages, or a group inside the group (a folding sub-menu; `open` starts it open). */
   pages: (DocLink | (DocGroup & { open?: boolean }))[];
 }
@@ -603,10 +627,10 @@ export function docMenu(groups: DocGroup[], current: string): string {
       .map((x) =>
         "href" in x
           ? `<a href="${escape(x.href)}"${x.href === current ? ' aria-current="page"' : ""}>${escape(x.title)}</a>`
-          : `<details class="dgrp"${x.open || inGroup(x, current) ? " open" : ""}><summary>${escape(x.name)}${chevron()}</summary>${links(x.pages)}</details>`,
+          : `<details class="dgrp"${x.open || inGroup(x, current) ? " open" : ""}><summary>${x.icon ?? ""}${escape(x.name)}${chevron()}</summary>${links(x.pages)}</details>`,
       )
       .join("");
-  return groups.map((g) => `<b>${escape(g.name)}</b>${links(g.pages)}`).join("");
+  return groups.map((g) => `<b>${g.icon ?? ""}${escape(g.name)}</b>${links(g.pages)}`).join("");
 }
 const inGroup = (g: DocGroup, href: string): boolean => g.pages.some((x) => ("href" in x ? x.href === href : inGroup(x, href)));
 
@@ -616,10 +640,10 @@ export const menuPages = (groups: DocGroup[]): DocLink[] => {
   return groups.flatMap((g) => flat(g.pages));
 };
 
-/** "On this page": a link to each `##` heading (outside code). */
-export function tocLinks(md: string): string {
+/** "On this page": a link to each `##` heading (outside code); `headingId` as given to renderMarkdown(). */
+export function tocLinks(md: string, o: Pick<MarkdownOptions, "headingId"> = {}): string {
   const prose = md.replace(/^```[^\n]*\n[\s\S]*?\n```[ \t]*$/gm, "");
-  return [...prose.matchAll(/^## (.+)$/gm)].map((m) => `<a href="#${headingId(m[1]!)}">${inline(escape(m[1]!))}</a>`).join("");
+  return [...prose.matchAll(/^## (.+)$/gm)].map((m) => `<a href="#${escape((o.headingId ?? headingId)(m[1]!))}">${inline(escape(m[1]!))}</a>`).join("");
 }
 
 /** Previous and next page cards. */
@@ -659,12 +683,16 @@ export function docsLayout(o: { menu: string; title: string; article: string; to
 
 /**
  * The page script: a copy button on each code block, "Copy page" (data-copy-md), and the "On this
- * page" rail following the section being read. The only script a docs page needs.
+ * page" rail following the section being read. The only script a docs page needs. `labels` for a
+ * page in another language (the code button's tooltip and label, and what "Copy page" says once done).
  */
-export const DOCS_SCRIPT = `<script>
+export const docsScript = (labels: { copy?: string; copyCode?: string; copied?: string } = {}) => {
+  const l = { copy: "Copy", copyCode: "Copy this command", copied: "Copied", ...labels };
+  const js = (v: string) => JSON.stringify(v).replace(/</g, "\\u003c");
+  return `<script>
 const ICONS='<svg class="cp" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="ok" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
-document.querySelectorAll(".doc pre").forEach(p=>{const b=document.createElement("button");b.type="button";b.className="cpy";b.title="Copy";b.setAttribute("aria-label","Copy this command");b.innerHTML=ICONS;b.dataset.copyCode="";p.appendChild(b)});
-const done=b=>{if(b.classList.contains("cpy")){b.classList.add("done");return setTimeout(()=>b.classList.remove("done"),1500)}const l=b.textContent;b.textContent="Copied";setTimeout(()=>b.textContent=l,1500)};
+document.querySelectorAll(".doc pre").forEach(p=>{const b=document.createElement("button");b.type="button";b.className="cpy";b.title=${js(l.copy)};b.setAttribute("aria-label",${js(l.copyCode)});b.innerHTML=ICONS;b.dataset.copyCode="";p.appendChild(b)});
+const done=b=>{if(b.classList.contains("cpy")){b.classList.add("done");return setTimeout(()=>b.classList.remove("done"),1500)}const l=b.textContent;b.textContent=${js(l.copied)};setTimeout(()=>b.textContent=l,1500)};
 document.addEventListener("click",async e=>{
   const c=e.target.closest("[data-copy-code]");
   if(c){await navigator.clipboard.writeText(c.parentElement.querySelector("code").textContent);return done(c)}
@@ -674,6 +702,9 @@ document.addEventListener("click",async e=>{
 const links=[...document.querySelectorAll(".toc a")];
 if(links.length){const io=new IntersectionObserver(es=>es.forEach(en=>{if(en.isIntersecting)links.forEach(l=>l.classList.toggle("on",l.getAttribute("href")==="#"+en.target.id))}),{rootMargin:"-80px 0px -70% 0px"});document.querySelectorAll(".doc h2[id]").forEach(h=>io.observe(h))}
 </script>`;
+};
+/** docsScript() in English. */
+export const DOCS_SCRIPT = docsScript();
 
 // ── For agents ─────────────────────────────────────────────
 

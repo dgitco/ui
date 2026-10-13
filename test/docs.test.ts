@@ -2,7 +2,7 @@
 // adds, and Mintlify's components as the Photoito guide writes them. `bun test`.
 import { expect, test } from "bun:test";
 import { DOCS_CSS, docsStyle } from "../registry/dgit/lib/docs-css";
-import { docMenu, docsLayout, frontMatter, inline, lede, llmsTxt, markdown, menuPages, renderMarkdown, tocLinks } from "../registry/dgit/lib/docs";
+import { DOCS_SCRIPT, docMenu, docsLayout, docsScript, frontMatter, inline, lede, llmsTxt, markdown, menuPages, mintlifyHeadingId, renderMarkdown, tocLinks } from "../registry/dgit/lib/docs";
 import { FA_TO_LUCIDE, docIcons, lucideExport, lucideIcons, svgIcon } from "../registry/dgit/lib/docs-icons";
 import * as lucide from "lucide";
 
@@ -130,6 +130,35 @@ test("front matter, lede, On this page, menu, llms.txt", () => {
   expect(menuPages(groups).map((p) => p.href)).toEqual(["/a", "/b"]);
   expect(docsLayout({ menu: "M", title: "T", article: "A", toc: "" })).toContain('<article class="doc">A</article></div>');
   expect(llmsTxt({ name: "X", summary: "S", sections: [{ name: "Docs", links: [{ title: "A", url: "https://x/a.md" }] }] })).toBe("# X\n\n> S\n\n## Docs\n\n- [A](https://x/a.md)\n");
+});
+
+test("heading ids: the default, or another tool's rule (Mintlify's) in the headings and On this page", () => {
+  for (const [text, id] of [
+    ["② 키오스크에서 첫화면 고르기", "②-키오스크에서-첫화면-고르기"],
+    ["이 화면에서 카테고리·필터 바로 만들기", "이-화면에서-카테고리·필터-바로-만들기"],
+    ["회전 시간 · 세션: 한 팀이 얼마나 걸리나", "회전-시간-·-세션-한-팀이-얼마나-걸리나"],
+    ["「같은 이름 병합」은 무엇인가요?", "「같은-이름-병합」은-무엇인가요"],
+    ["2. 사진이 들어갈 자리 뚫기", "2-사진이-들어갈-자리-뚫기"],
+    ["행사 기간에만 쓰는 20% 할인", "행사-기간에만-쓰는-20%-할인"],
+    ["「결제 프로그램이 켜지지 않았어요 (계속 진행해요)」", "「결제-프로그램이-켜지지-않았어요-계속-진행해요-」"],
+    ["Over SSH", "over-ssh"],
+  ]) expect(mintlifyHeadingId(text!)).toBe(id!);
+  const md = "## 기기·매장 비교\n\n#### A <b>";
+  expect(markdown(md)).toContain('<h2 id="기기-매장-비교">');
+  const html = markdown(md, { headingId: mintlifyHeadingId });
+  expect(html).toContain('<h2 id="기기·매장-비교">기기·매장 비교<a class="hash" href="#기기·매장-비교"');
+  expect(html).toContain('<h4 id="a-b">');
+  expect(tocLinks(md, { headingId: mintlifyHeadingId })).toBe('<a href="#기기·매장-비교">기기·매장 비교</a>');
+});
+
+test("menu group icons; the page script in another language", () => {
+  const svg = '<svg class="i"></svg>';
+  expect(docMenu([{ name: "Start", icon: svg, pages: [{ name: "More", icon: svg, pages: [{ href: "/b", title: "B" }] }] }], "")).toStartWith(`<b>${svg}Start</b><details class="dgrp"><summary>${svg}More<svg`);
+  expect(docsScript()).toBe(DOCS_SCRIPT);
+  const ko = docsScript({ copy: "복사", copyCode: "이 명령 복사", copied: "</script>" });
+  expect(ko).toContain('b.title="복사";b.setAttribute("aria-label","이 명령 복사")');
+  expect(ko).toContain('b.textContent="\\u003c/script>"');
+  expect(DOCS_SCRIPT).toContain('b.title="Copy";b.setAttribute("aria-label","Copy this command")');
 });
 
 test("lists with blank lines between items or blocks under them are one list", () => {
