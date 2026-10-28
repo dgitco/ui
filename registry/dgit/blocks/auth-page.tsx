@@ -85,6 +85,8 @@ export function AuthCodeField({ className, ...props }: ComponentProps<"input">) 
  * A one-time code as boxes: two joined groups with a dash between (6 → 3·3, 8 → 4·4). One real input sits
  * over the boxes, so typing, paste (a full "123 456" replaces what's there), backspace and the phone's
  * `one-time-code` autofill all behave like a normal field. The box to type into gets the focus ring; `bad` turns the boxes red.
+ * `fill` stretches the boxes so the row spans its container (e.g. as wide as the Continue button under it);
+ * the dash between the groups keeps its size.
  *
  *   <AuthCodeBoxes value={code} onChange={setCode} label="6-digit code" bad={Boolean(error)} />
  */
@@ -94,6 +96,7 @@ export function AuthCodeBoxes({
   length = 6,
   numeric = true,
   bad = false,
+  fill = false,
   label,
   inputRef,
   className,
@@ -105,6 +108,8 @@ export function AuthCodeBoxes({
   /** Digits only (default). Off: letters and digits, upper-cased. */
   numeric?: boolean;
   bad?: boolean;
+  /** Stretch the boxes to the container's full width (height stays 36px). */
+  fill?: boolean;
   /** The field's accessible name ("6-digit code"). */
   label: string;
   inputRef?: Ref<HTMLInputElement>;
@@ -116,11 +121,14 @@ export function AuthCodeBoxes({
     const end = el.value.length;
     if (el.selectionStart !== end || el.selectionEnd !== end) el.setSelectionRange(end, end);
   };
+  // `fill`: equal grid columns, so every box is the same width whatever its borders.
+  const cols = (n: number) => ({ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))` });
   const box = (i: number) => (
     <div
       key={i}
       className={cn(
-        "relative flex size-9 items-center justify-center border-y border-r border-input bg-background-200 text-sm leading-5 text-foreground shadow-xs first:rounded-l-[8px] first:border-l last:rounded-r-[8px]",
+        "relative flex h-9 items-center justify-center border-y border-r border-input bg-background-200 text-sm leading-5 text-foreground shadow-xs first:rounded-l-[8px] first:border-l last:rounded-r-[8px]",
+        !fill && "w-9",
         i === active && "group-focus-within:z-10 group-focus-within:ring-2 group-focus-within:ring-ring",
         bad && "border-destructive",
       )}
@@ -129,14 +137,14 @@ export function AuthCodeBoxes({
     </div>
   );
   return (
-    <div className={cn("group relative inline-flex items-center gap-2", className)}>
-      <div className="flex" aria-hidden="true">
+    <div className={cn("group relative items-center gap-2", fill ? "flex w-full" : "inline-flex", className)}>
+      <div className={cn("flex", fill && "grid flex-1")} style={fill ? cols(half) : undefined} aria-hidden="true">
         {Array.from({ length: half }, (_, i) => box(i))}
       </div>
-      <div className="flex size-6 items-center justify-center" aria-hidden="true">
+      <div className="flex size-6 shrink-0 items-center justify-center" aria-hidden="true">
         <span className="h-0.5 w-4 bg-foreground opacity-20" />
       </div>
-      <div className="flex" aria-hidden="true">
+      <div className={cn("flex", fill && "grid flex-1")} style={fill ? cols(length - half) : undefined} aria-hidden="true">
         {Array.from({ length: length - half }, (_, i) => box(half + i))}
       </div>
       <input

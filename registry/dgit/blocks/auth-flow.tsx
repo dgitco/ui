@@ -1126,6 +1126,7 @@ export function AuthFlow(props: AuthFlowProps) {
                 value={code}
                 label={t.codeLabel}
                 bad={Boolean(bad)}
+                fill
                 onChange={(v) => {
                   if (problem?.field === "code") setProblem(null);
                   setCode(v);
@@ -1188,6 +1189,7 @@ export function AuthFlow(props: AuthFlowProps) {
                     value={code}
                     label={t.twoFactorLabel}
                     bad={Boolean(bad)}
+                    fill
                     onChange={(v) => {
                       if (problem?.field === "code") setProblem(null);
                       setCode(v);
