@@ -1,10 +1,11 @@
-import type { ComponentProps, ReactNode } from "react";
+import type { ComponentProps, ReactNode, Ref } from "react";
 import { cn } from "@/lib/utils";
 
 /**
  * Sign-in screens: no card, one centered 384px column, a 30px title, 40px pill choices stacked
- * (email, passkey, Google, GitHub), and "Signing in to <app>" at the top right when another app
- * sent the person here.
+ * (email, passkey, Google, GitHub), a code field or code boxes, and "Signing in to <app>" at the top
+ * right when another app sent the person here. For the whole email → code / password / Google flow, use
+ * the `auth-flow` block, which is built on these.
  *
  *   <AuthLayout brand={<Logo />} app="Claude">
  *     <AuthTitle>Log into your account</AuthTitle>
@@ -80,9 +81,87 @@ export function AuthCodeField({ className, ...props }: ComponentProps<"input">) 
   );
 }
 
-export function AuthDivider({ children = "or" }: { children?: ReactNode }) {
+/**
+ * A one-time code as boxes: two joined groups with a dash between (6 → 3·3, 8 → 4·4). One real input sits
+ * over the boxes, so typing, paste ("123 456" works), backspace and the phone's `one-time-code` autofill
+ * all behave like a normal field. The box to type into gets the focus ring; `bad` turns the boxes red.
+ *
+ *   <AuthCodeBoxes value={code} onChange={setCode} label="6-digit code" bad={Boolean(error)} />
+ */
+export function AuthCodeBoxes({
+  value,
+  onChange,
+  length = 6,
+  numeric = true,
+  bad = false,
+  label,
+  inputRef,
+  className,
+  ...props
+}: Omit<ComponentProps<"input">, "value" | "onChange" | "ref"> & {
+  value: string;
+  onChange: (value: string) => void;
+  length?: number;
+  /** Digits only (default). Off: letters and digits, upper-cased. */
+  numeric?: boolean;
+  bad?: boolean;
+  /** The field's accessible name ("6-digit code"). */
+  label: string;
+  inputRef?: Ref<HTMLInputElement>;
+}) {
+  const clean = (raw: string) => (numeric ? raw.replace(/\D/g, "") : raw.replace(/[^0-9a-z]/gi, "").toUpperCase()).slice(0, length);
+  const active = Math.min(value.length, length - 1);
+  const half = Math.ceil(length / 2);
+  const caretToEnd = (el: HTMLInputElement) => {
+    const end = el.value.length;
+    if (el.selectionStart !== end || el.selectionEnd !== end) el.setSelectionRange(end, end);
+  };
+  const box = (i: number) => (
+    <div
+      key={i}
+      className={cn(
+        "relative flex size-9 items-center justify-center border-y border-r border-input bg-background-200 text-sm leading-5 text-foreground shadow-xs first:rounded-l-[8px] first:border-l last:rounded-r-[8px]",
+        i === active && "group-focus-within:z-10 group-focus-within:ring-2 group-focus-within:ring-ring",
+        bad && "border-destructive",
+      )}
+    >
+      {value[i] ?? ""}
+    </div>
+  );
   return (
-    <div className="my-1 flex items-center gap-3 text-[13px] text-muted-foreground before:h-px before:flex-1 before:bg-border after:h-px after:flex-1 after:bg-border">
+    <div className={cn("group relative inline-flex items-center gap-2", className)}>
+      <div className="flex" aria-hidden="true">
+        {Array.from({ length: half }, (_, i) => box(i))}
+      </div>
+      <div className="flex size-6 items-center justify-center" aria-hidden="true">
+        <span className="h-0.5 w-4 bg-foreground opacity-20" />
+      </div>
+      <div className="flex" aria-hidden="true">
+        {Array.from({ length: length - half }, (_, i) => box(half + i))}
+      </div>
+      <input
+        ref={inputRef}
+        value={value}
+        onChange={(e) => onChange(clean(e.target.value))}
+        onSelect={(e) => caretToEnd(e.currentTarget)}
+        onFocus={(e) => caretToEnd(e.currentTarget)}
+        inputMode={numeric ? "numeric" : "text"}
+        autoComplete="one-time-code"
+        autoCapitalize={numeric ? "off" : "characters"}
+        autoCorrect="off"
+        spellCheck={false}
+        aria-label={label}
+        aria-invalid={bad || undefined}
+        className="absolute inset-0 size-full cursor-text border-0 bg-transparent p-0 text-base text-transparent caret-transparent outline-none selection:bg-transparent"
+        {...props}
+      />
+    </div>
+  );
+}
+
+export function AuthDivider({ children = "or", className }: { children?: ReactNode; className?: string }) {
+  return (
+    <div className={cn("my-1 flex items-center gap-3 text-[13px] text-muted-foreground before:h-px before:flex-1 before:bg-border after:h-px after:flex-1 after:bg-border", className)}>
       {children}
     </div>
   );
