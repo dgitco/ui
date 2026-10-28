@@ -9,6 +9,7 @@ import { Segmented } from "@/registry/dgit/ui/segmented";
 import { AppHeader, navPill } from "@/registry/dgit/blocks/app-header";
 import { ScopeSwitcher, SidebarLayout, type LinkRenderer, type NavItem, type NavLayer } from "@/registry/dgit/blocks/sidebar-layout";
 import { AuthButton, AuthCodeField, AuthDivider, AuthField, AuthLayout, AuthNote, AuthTitle } from "@/registry/dgit/blocks/auth-page";
+import { AuthFlow, type AuthResult, type LookupAnswer } from "@/registry/dgit/blocks/auth-flow";
 import { useTheme } from "@/registry/dgit/lib/theme";
 import { DGitChip } from "./mark";
 import { DocsDemo } from "./docs-demo";
@@ -263,6 +264,79 @@ function AuthDemo() {
   );
 }
 
+/** Fake server for the auth-flow preview: every call waits a moment, then answers by the email typed. */
+const wait = (ms = 700) => new Promise((r) => setTimeout(r, ms));
+const FAKE = {
+  async lookup(email: string): Promise<LookupAnswer | { ok: false; error: string }> {
+    await wait();
+    const who = email.split("@")[0];
+    if (who === "limit") return { ok: false, error: "rate_limited" };
+    if (who === "outside") return { ok: false, error: "invite_required" };
+    if (who === "down") throw new Error("offline");
+    if (who === "new") return { account: "none" };
+    if (who === "google") return { account: "exists", methods: { google: true, code: false } };
+    if (who === "pw") return { account: "exists", methods: { password: true } };
+    return { account: "exists", methods: { code: true } };
+  },
+  async sendCode(): Promise<AuthResult> {
+    await wait();
+    return { ok: true };
+  },
+  async verifyCode({ code }: { code: string }): Promise<AuthResult> {
+    await wait();
+    if (code === "123456") return { ok: true };
+    if (code === "000000") return { ok: false, error: "code_expired" };
+    return { ok: false, error: "code_invalid" };
+  },
+  async password({ password }: { password: string }): Promise<AuthResult> {
+    await wait();
+    return password === "password" ? { ok: true } : { ok: false, error: "password_invalid" };
+  },
+};
+
+function AuthFlowDemo() {
+  const [run, setRun] = useState(0);
+  const [done, setDone] = useState(false);
+  // Google: the demo can't leave, so it plays the round trip: the app shows `finishing` while it checks,
+  // then Google "refused" comes back as `initialError`.
+  const [finishing, setFinishing] = useState(false);
+  const [googleError, setGoogleError] = useState<"google_failed" | undefined>();
+  const google = async () => {
+    await wait(600);
+    setGoogleError(undefined);
+    setFinishing(true);
+    setTimeout(() => (setFinishing(false), setGoogleError("google_failed")), 900);
+  };
+  if (done)
+    return (
+      <AuthLayout brand={<DGitChip />}>
+        <AuthTitle sub="The demo's onDone ran. A real app goes to its first page here.">Signed in</AuthTitle>
+        <AuthButton onClick={() => (setDone(false), setGoogleError(undefined), setRun((r) => r + 1))}>Start over</AuthButton>
+      </AuthLayout>
+    );
+  return (
+    <AuthFlow
+      key={run}
+      brand={<DGitChip />}
+      methods={{ code: true, google: true, password: true }}
+      lookup={FAKE.lookup}
+      sendCode={FAKE.sendCode}
+      verifyCode={FAKE.verifyCode}
+      password={FAKE.password}
+      resetPassword={FAKE.sendCode}
+      google={google}
+      finishing={finishing}
+      initialError={googleError}
+      onDone={async () => {
+        await wait(500);
+        setDone(true);
+      }}
+      text={{ emailTitle: "보더에 로그인하기" }}
+      footer={<>Try new@, google@, pw@, limit@, outside@ or down@ any domain · code 123456 (000000 expires) · password “password”</>}
+    />
+  );
+}
+
 export const ITEMS: Item[] = [
   {
     name: "theme",
@@ -448,8 +522,31 @@ const search = docsSearch({ index: "/search.json" }); // search.button in the he
   <AuthButton icon={<KeyRound />}>Continue with passkey</AuthButton>
 </AuthLayout>`,
   },
+  {
+    name: "auth-flow",
+    title: "Sign-in flow",
+    kind: "block",
+    summary:
+      "The whole sign-in from Neotax, monochrome: an email, then the app's lookup picks the step (6-digit code, password, passkey, Google-only, create account, two-step, forgot password). Server calls are props; strings are Korean by default, English with AUTH_TEXT_EN.",
+    preview: () => <AuthFlowDemo />,
+    frame: 680,
+    usage: `import { AuthFlow } from "@/components/auth-flow";
+
+<AuthFlow
+  brand={<Logo />}
+  methods={{ code: true, google: true }}            // also password, passkey, signup, twoFactor
+  lookup={(email) => api("/login/lookup", { email })} // { account: "none" } | { account: "exists", methods }
+  sendCode={(email, purpose) => api("/login/code", { email, purpose })}
+  verifyCode={({ email, code }) => api("/login/code/verify", { email, code })}
+  google={() => auth.signIn.social({ provider: "google" })}
+  onDone={() => location.replace(next)}
+  text={{ emailTitle: "보더에 로그인하기" }}     // or text={AUTH_TEXT_EN}
+/>
+
+// Every call answers { ok: true } or { ok: false, error: "code_invalid" | "rate_limited" | … }`,
+  },
 ];
 
 export const itemByName = (name: string | undefined) => ITEMS.find((i) => i.name === name);
 export const pathOf = (i: Item) => (i.kind === "block" ? `/blocks/${i.name}` : `/components/${i.name}`);
-export { AccountDemo, AuthDemo, ButtonsDemo, HeaderDemo, MenuDemo, SegmentedDemo };
+export { AccountDemo, AuthDemo, AuthFlowDemo, ButtonsDemo, HeaderDemo, MenuDemo, SegmentedDemo };
