@@ -292,20 +292,26 @@ const FAKE = {
     await wait();
     return password === "password" ? { ok: true } : { ok: false, error: "password_invalid" };
   },
-  async google(): Promise<AuthResult> {
-    await wait(900);
-    return { ok: false, error: "google_failed" };
-  },
 };
 
 function AuthFlowDemo() {
   const [run, setRun] = useState(0);
   const [done, setDone] = useState(false);
+  // Google: the demo can't leave, so it plays the round trip: the app shows `finishing` while it checks,
+  // then Google "refused" comes back as `initialError`.
+  const [finishing, setFinishing] = useState(false);
+  const [googleError, setGoogleError] = useState<"google_failed" | undefined>();
+  const google = async () => {
+    await wait(600);
+    setGoogleError(undefined);
+    setFinishing(true);
+    setTimeout(() => (setFinishing(false), setGoogleError("google_failed")), 900);
+  };
   if (done)
     return (
       <AuthLayout brand={<DGitChip />}>
         <AuthTitle sub="The demo's onDone ran. A real app goes to its first page here.">Signed in</AuthTitle>
-        <AuthButton onClick={() => (setDone(false), setRun((r) => r + 1))}>Start over</AuthButton>
+        <AuthButton onClick={() => (setDone(false), setGoogleError(undefined), setRun((r) => r + 1))}>Start over</AuthButton>
       </AuthLayout>
     );
   return (
@@ -318,7 +324,9 @@ function AuthFlowDemo() {
       verifyCode={FAKE.verifyCode}
       password={FAKE.password}
       resetPassword={FAKE.sendCode}
-      google={FAKE.google}
+      google={google}
+      finishing={finishing}
+      initialError={googleError}
       onDone={async () => {
         await wait(500);
         setDone(true);

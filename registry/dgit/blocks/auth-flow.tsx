@@ -214,7 +214,7 @@ export const AUTH_TEXT_KO: AuthText = {
   passwordLabel: "비밀번호",
   forgotLink: "비밀번호를 잊으셨나요?",
   signIn: "로그인하기",
-  passkeyTitle: "패스키로 확인하는 중",
+  passkeyTitle: "패스키로 확인해 주세요",
   passkeySub: "브라우저 창에서 {email} 의 패스키로 확인하세요.",
   passkeyRetry: "패스키로 다시 하기",
   usePassword: "비밀번호로 로그인하기",
@@ -300,7 +300,7 @@ export const AUTH_TEXT_EN: AuthText = {
   passwordLabel: "Password",
   forgotLink: "Forgot password?",
   signIn: "Log in",
-  passkeyTitle: "Checking your passkey",
+  passkeyTitle: "Confirm with your passkey",
   passkeySub: "Use the passkey for {email} in the browser window.",
   passkeyRetry: "Try the passkey again",
   usePassword: "Log in with password",
@@ -557,7 +557,8 @@ export function AuthFlow(props: AuthFlowProps) {
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState<BusyKind>(null);
   const [forgotFrom, setForgotFrom] = useState<AuthStep>("password");
-  const passkeyRun = useRef(0);
+  /** Bumped on every step change: a reply that comes back after the person moved on is dropped. */
+  const gen = useRef(0);
   const busyRef = useRef(false);
 
   const refs = {
@@ -567,10 +568,6 @@ export function AuthFlow(props: AuthFlowProps) {
     code: useRef<HTMLInputElement>(null),
   };
 
-  useEffect(() => {
-    if (props.finishing) setStep("routing");
-  }, [props.finishing]);
-
   // Each step focuses its first field.
   useLayoutEffect(() => {
     const first: Partial<Record<AuthStep, { current: HTMLInputElement | null }>> = { email: refs.email, forgot: refs.email, password: refs.password, signup: refs.name, code: refs.code, twofactor: refs.code };
@@ -579,6 +576,32 @@ export function AuthFlow(props: AuthFlowProps) {
     // Only when the step changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
+
+  // `finishing` and `initialError` can change after mount (back from Google, the app decides): spinner while
+  // finishing, then the email step with the error, if any.
+  const mounted = useRef(false);
+  useEffect(() => {
+    if (!mounted.current) {
+      mounted.current = true;
+      return;
+    }
+    if (props.finishing) return go("routing");
+    if (step === "routing") go("email");
+    if (props.initialError) fail({ error: props.initialError });
+    // Only when these props change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.finishing, props.initialError]);
+
+  // Back from Google with the browser's back button (page restored from the back-forward cache): no spinner.
+  useEffect(() => {
+    const onShow = (e: PageTransitionEvent) => {
+      if (!e.persisted) return;
+      busyRef.current = false;
+      setBusy(null);
+    };
+    window.addEventListener("pageshow", onShow);
+    return () => window.removeEventListener("pageshow", onShow);
+  }, []);
 
   // The email field's passkey autofill: browsers with a passkey offer it when the field is tapped.
   useEffect(() => {
@@ -612,7 +635,11 @@ export function AuthFlow(props: AuthFlowProps) {
     setNotice("");
   }
 
+  /** Change step. Calls still running for the old step are dropped, and their spinner goes. */
   function go(to: AuthStep) {
+    gen.current++;
+    busyRef.current = false;
+    setBusy(null);
     clear();
     setStep(to);
   }
@@ -623,18 +650,25 @@ export function AuthFlow(props: AuthFlowProps) {
     setProblem({ field: owner ?? FIELD_OF[m.key] ?? null, message: m.text });
   }
 
-  /** One server call at a time, with a spinner on the button that started it. A throw is the generic error. */
-  async function run(kind: Exclude<BusyKind, null>, work: () => Promise<void>) {
+  /**
+   * One server call at a time, with a spinner on the button that started it. `live()` turns false once the
+   * step changes (Back, another email): check it after every await. A throw is the generic error.
+   */
+  async function run(kind: Exclude<BusyKind, null>, work: (live: () => boolean) => Promise<void>) {
     if (busyRef.current) return;
+    const g = gen.current;
+    const live = () => g === gen.current;
     busyRef.current = true;
     setBusy(kind);
     try {
-      await work();
+      await work(live);
     } catch {
-      setProblem({ field: null, message: t.errors.generic });
+      if (live()) setProblem({ field: null, message: t.errors.generic });
     } finally {
-      busyRef.current = false;
-      setBusy(null);
+      if (live()) {
+        busyRef.current = false;
+        setBusy(null);
+      }
     }
   }
 
@@ -647,10 +681,12 @@ export function AuthFlow(props: AuthFlowProps) {
       return;
     }
     go("routing");
+    const g = gen.current;
     try {
       await props.onDone();
     } catch {
-      setStep("email");
+      if (g !== gen.current) return;
+      go("email");
       setProblem({ field: null, message: t.errors.sign_in_failed });
     }
   }
@@ -663,31 +699,32 @@ export function AuthFlow(props: AuthFlowProps) {
     return null;
   }
 
-  async function toCode(value: string, p: CodePurpose, from: AuthStep) {
+  async function toCode(value: string, p: CodePurpose, live: () => boolean) {
     if (!props.sendCode) throw new Error("sendCode missing");
     const r = await props.sendCode(value, p);
-    if (isFailure(r)) return fail(r, from === "code" ? "code" : undefined);
+    if (!live()) return;
+    if (isFailure(r)) return fail(r);
     setPurpose(p);
     setCode("");
     go("code");
   }
 
-  async function startPasskey(has: { password?: boolean } | null) {
-    const runId = ++passkeyRun.current;
+  async function startPasskey(has: { password?: boolean } | null, address: string) {
     go("passkey");
+    const g = gen.current;
     let r: AuthResult;
     try {
-      r = props.passkey ? await props.passkey({ email, autoFill: false }) : { ok: false };
+      r = props.passkey ? await props.passkey({ email: address, autoFill: false }) : NOT_SET;
     } catch {
-      r = { ok: false };
+      r = NOT_SET;
     }
-    if (runId !== passkeyRun.current) return;
+    if (g !== gen.current) return;
     if (r.ok) return finish(r);
     if (stepAfterPasskeyFailure(has, on) === "password") {
       setPasskeyFailed(true);
       setPassword("");
       go("password");
-      fail({ error: "passkey_failed_password" }, undefined);
+      fail({ error: "passkey_failed_password" });
     } else {
       go("email");
       fail({ error: "passkey_failed" });
@@ -695,14 +732,12 @@ export function AuthFlow(props: AuthFlowProps) {
   }
 
   function toEmail() {
-    passkeyRun.current++;
     setPassword("");
     setPasskeyFailed(false);
     go("email");
   }
 
   function toPassword() {
-    passkeyRun.current++;
     setPasskeyFailed(false);
     setPassword("");
     go("password");
@@ -714,10 +749,11 @@ export function AuthFlow(props: AuthFlowProps) {
     const value = badEmail();
     if (!value) return;
     setEmail(value);
-    void run("submit", async () => {
+    void run("submit", async (live) => {
       let answer: LookupAnswer;
       if (props.lookup) {
         const r = await props.lookup(value);
+        if (!live()) return;
         if (isFailure(r)) return fail(r);
         answer = r;
       } else {
@@ -727,9 +763,9 @@ export function AuthFlow(props: AuthFlowProps) {
       setKnown(has);
       const to = stepAfterLookup(answer, on);
       if (to === "none") return fail({ error: "no_account" });
-      if (to === "code") return toCode(value, answer.account === "none" ? "sign-up" : "sign-in", "email");
+      if (to === "code") return toCode(value, answer.account === "none" ? "sign-up" : "sign-in", live);
       if (to === "passkey") {
-        void startPasskey(has);
+        void startPasskey(has, value);
         return;
       }
       setPassword("");
@@ -742,8 +778,9 @@ export function AuthFlow(props: AuthFlowProps) {
     e.preventDefault();
     clear();
     if (!password) return fail({ error: "password_empty" });
-    void run("submit", async () => {
+    void run("submit", async (live) => {
       const r = props.password ? await props.password({ email, password }) : NOT_SET;
+      if (!live()) return;
       if (isFailure(r)) return fail(r);
       await finish(r);
     });
@@ -755,10 +792,11 @@ export function AuthFlow(props: AuthFlowProps) {
     if (!name.trim()) return fail({ error: "name_required" });
     if (on.password && password.length < passwordMin) return fail({ error: "password_too_short" });
     if (on.password && password.length > passwordMax) return fail({ error: "password_too_long" });
-    void run("submit", async () => {
+    void run("submit", async (live) => {
       const r = props.signup
         ? await props.signup({ email, name: name.trim(), ...(on.password ? { password } : {}) })
         : NOT_SET;
+      if (!live()) return;
       if (isFailure(r)) return fail(r);
       if (r.next === "signed_in") return finish({ ok: true });
       setPurpose("sign-up");
@@ -775,11 +813,14 @@ export function AuthFlow(props: AuthFlowProps) {
       refs.code.current?.focus();
       return;
     }
-    void run("submit", async () => {
+    void run("submit", async (live) => {
       const r = props.verifyCode
         ? await props.verifyCode({ email, code, purpose, ...(purpose === "sign-up" && password ? { password } : {}) })
         : NOT_SET;
+      if (!live()) return;
       if (isFailure(r)) {
+        // A wrong or expired code is useless: empty the boxes for the next one.
+        if (r.error === "code_invalid" || r.error === "code_expired") setCode("");
         fail(r, "code");
         refs.code.current?.focus();
         return;
@@ -790,9 +831,10 @@ export function AuthFlow(props: AuthFlowProps) {
 
   function resend() {
     clear();
-    void run("resend", async () => {
+    void run("resend", async (live) => {
       if (!props.sendCode) throw new Error("sendCode missing");
       const r = await props.sendCode(email, purpose);
+      if (!live()) return;
       if (isFailure(r)) return fail(r, "code");
       setCode("");
       setNotice(t.codeSent);
@@ -809,8 +851,9 @@ export function AuthFlow(props: AuthFlowProps) {
       refs.code.current?.focus();
       return;
     }
-    void run("submit", async () => {
+    void run("submit", async (live) => {
       const r = props.twoFactor ? await props.twoFactor({ code: value, recovery }) : NOT_SET;
+      if (!live()) return;
       if (isFailure(r)) return fail(r.error || r.message ? r : { error: recovery ? "recovery_invalid" : "two_factor_invalid" }, "code");
       await finish({ ok: true });
     });
@@ -822,35 +865,34 @@ export function AuthFlow(props: AuthFlowProps) {
     const value = badEmail();
     if (!value) return;
     setEmail(value);
-    void run(step === "sent" ? "resend" : "submit", async () => {
+    const from = step;
+    void run(from === "sent" ? "resend" : "submit", async (live) => {
       const r = props.resetPassword ? await props.resetPassword(value) : NOT_SET;
+      if (!live()) return;
       if (isFailure(r)) return fail(r);
-      if (step !== "sent") go("sent");
+      if (from !== "sent") go("sent");
     });
   }
 
   function startGoogle() {
-    clear();
     if (busyRef.current) return;
+    clear();
+    const g = gen.current;
     busyRef.current = true;
     setBusy("google");
     (async () => {
+      let r: AuthResult | void;
       try {
-        const r = props.google ? await props.google() : NOT_SET;
-        if (!r) return; // Leaving for Google: keep the spinner.
-        if (isFailure(r)) {
-          fail({ ...r, error: r.error ?? "google_failed" });
-        } else {
-          busyRef.current = false;
-          setBusy(null);
-          await finish(r);
-          return;
-        }
+        r = props.google ? await props.google() : NOT_SET;
       } catch {
-        fail({ error: "google_failed" });
+        r = { ok: false, error: "google_failed" };
       }
+      if (g !== gen.current) return;
+      if (!r) return; // Leaving for Google: keep the spinner (pageshow clears it if they come back).
       busyRef.current = false;
       setBusy(null);
+      if (isFailure(r)) fail({ ...r, error: r.error ?? "google_failed" });
+      else await finish(r);
     })();
   }
 
@@ -1004,7 +1046,7 @@ export function AuthFlow(props: AuthFlowProps) {
             )}
             <div className="flex flex-col gap-3">
               {submit(t.signIn)}
-              {passkeyFailed ? outline(t.passkeyRetry, () => void startPasskey(known)) : outline(t.back, toEmail)}
+              {passkeyFailed ? outline(t.passkeyRetry, () => void startPasskey(known, email)) : outline(t.back, toEmail)}
             </div>
           </form>
         </>

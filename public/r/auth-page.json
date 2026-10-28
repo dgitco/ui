@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "auth-page",
   "title": "Sign-in page",
-  "description": "Centered 384px column, 30px title, stacked 40px pill choices, code field, 'Signing in to <app>'.",
+  "description": "Centered 384px column, 30px title, stacked 40px pill choices, code field and code boxes, 'Signing in to <app>'.",
   "files": [
     {
       "path": "registry/dgit/blocks/auth-page.tsx",
