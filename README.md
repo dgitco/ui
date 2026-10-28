@@ -19,7 +19,8 @@ Site with previews, install commands, and source: **https://ui.dgit.co**
 | `segmented` | Two or three choices in one small pill |
 | `app-header` | Dashboard top bar: brand, pill navigation, account menu |
 | `sidebar-layout` | Dashboard sidebar with drill-in groups, breadcrumbs, and a phone drawer |
-| `auth-page` | Sign-in page: a centered column, pill choices, a code field |
+| `auth-page` | Sign-in page: a centered column, pill choices, a code field, code boxes |
+| `auth-flow` | The whole sign-in from Neotax: email, then code, password, passkey, Google-only, sign-up, two-step or reset. Server calls are props |
 
 ## Use it in a project
 
@@ -47,7 +48,7 @@ Import `dgit.css` after Tailwind in your main CSS (`@import "./dgit.css";`), and
 | `registry/dgit/` | The kit: `styles/dgit.css` (theme), `lib/theme.ts`, `lib/docs.ts`, `lib/docs-icons.ts` and `lib/docs-css.ts` (docs pages; `styles/docs.css` is generated from `docs-css.ts` by `scripts/docs-css.ts`), `ui/*` (components), `blocks/*` (screens) |
 | `registry.json` | The item list. `bun run registry` builds it into `public/r/<item>.json` |
 | `src/` | The showcase site (Vite, React, Tailwind v4). Previews use the `registry/` sources directly |
-| `test/` | `bun run test`: the docs item's renderer (the core as 0bridge prints it, the Mintlify components, icons) |
+| `test/` | `bun run test`: the docs item's renderer (the core as 0bridge prints it, the Mintlify components, icons) and auth-flow's lookup → step contract |
 | `scripts/seo.ts` | After the build, writes a static HTML page per route (title, description, structured data, text) plus `robots.txt`, `sitemap.xml`, and `llms.txt`, so crawlers that don't run JavaScript can read the site |
 | `worker/` | Runs only for `/r/*` and counts registry fetches per day and item. The counts are private |
 

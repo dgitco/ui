@@ -33,7 +33,8 @@ Don't let `shadcn add` replace an existing `lib/utils.ts`.
 | `@dgit/copy` | `CopyField`, `CopyButton` for URLs, commands, tokens |
 | `@dgit/segmented` | 2–3 choice pill toggle |
 | `@dgit/app-header` | Dashboard top bar: brand, `navPill()` links, account menu on the right |
-| `@dgit/auth-page` | Sign-in screens: `AuthLayout`, `AuthTitle`, `AuthButton`, `AuthField`, `AuthCodeField`, `AuthDivider`, `AuthNote` |
+| `@dgit/auth-page` | Sign-in screens: `AuthLayout`, `AuthTitle`, `AuthButton`, `AuthField`, `AuthCodeField`, `AuthCodeBoxes`, `AuthDivider`, `AuthNote` |
+| `@dgit/auth-flow` | The whole sign-in (email → lookup → code, password, passkey, Google-only, sign-up, two-step, reset). `<AuthFlow methods={{ code: true, google: true }} lookup sendCode verifyCode google onDone />`; server calls are props, Korean strings (`AUTH_TEXT_EN` for English) |
 
 Before writing a component, check whether an item already covers it, and add it. Open `https://ui.dgit.co/r/<item>.json` to read an item's source without installing it.
 

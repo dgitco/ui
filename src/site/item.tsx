@@ -88,3 +88,10 @@ export function ItemPage() {
     </div>
   );
 }
+
+/** One block's preview filling the window, without the site around it. */
+export function ItemFull() {
+  const item = itemByName(useParams().name);
+  if (!item) return <NotFound />;
+  return <div className="h-dvh [&>div]:h-full [&>div]:min-h-full! [&>div]:w-full">{item.preview()}</div>;
+}
