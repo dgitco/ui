@@ -83,8 +83,8 @@ export function AuthCodeField({ className, ...props }: ComponentProps<"input">) 
 
 /**
  * A one-time code as boxes: two joined groups with a dash between (6 → 3·3, 8 → 4·4). One real input sits
- * over the boxes, so typing, paste ("123 456" works), backspace and the phone's `one-time-code` autofill
- * all behave like a normal field. The box to type into gets the focus ring; `bad` turns the boxes red.
+ * over the boxes, so typing, paste (a full "123 456" replaces what's there), backspace and the phone's
+ * `one-time-code` autofill all behave like a normal field. The box to type into gets the focus ring; `bad` turns the boxes red.
  *
  *   <AuthCodeBoxes value={code} onChange={setCode} label="6-digit code" bad={Boolean(error)} />
  */
@@ -140,9 +140,17 @@ export function AuthCodeBoxes({
         {Array.from({ length: length - half }, (_, i) => box(half + i))}
       </div>
       <input
+        {...props}
         ref={inputRef}
         value={value}
         onChange={(e) => onChange(clean(e.target.value))}
+        // The caret always sits at the end, so a paste would only append: a full code ("123 456") replaces
+        // the value, a shorter piece is added to it.
+        onPaste={(e) => {
+          e.preventDefault();
+          const pasted = clean(e.clipboardData.getData("text"));
+          if (pasted) onChange(pasted.length >= length ? pasted : clean(value + pasted));
+        }}
         onSelect={(e) => caretToEnd(e.currentTarget)}
         onFocus={(e) => caretToEnd(e.currentTarget)}
         inputMode={numeric ? "numeric" : "text"}
@@ -153,7 +161,6 @@ export function AuthCodeBoxes({
         aria-label={label}
         aria-invalid={bad || undefined}
         className="absolute inset-0 size-full cursor-text border-0 bg-transparent p-0 text-base text-transparent caret-transparent outline-none selection:bg-transparent"
-        {...props}
       />
     </div>
   );
