@@ -141,6 +141,9 @@ export interface AuthFlowProps {
   footer?: ReactNode;
   /** Only the column, without `AuthLayout` (to put it in your own page). */
   bare?: boolean;
+  /** Email-code step without Continue: six fixed boxes, checked the moment the sixth digit lands (typed or pasted);
+   * "Send a new code" is a text link. Off (default): boxes as wide as the button, Continue and an outline resend. */
+  codeAuto?: boolean;
   className?: string;
 }
 
@@ -807,6 +810,10 @@ export function AuthFlow(props: AuthFlowProps) {
 
   function onCode(e: FormEvent) {
     e.preventDefault();
+    verify(code);
+  }
+
+  function verify(code: string) {
     clear();
     if (code.length !== 6) {
       fail({ error: "code_incomplete" });
@@ -908,6 +915,9 @@ export function AuthFlow(props: AuthFlowProps) {
       </Busy>
     </AuthButton>
   );
+
+  const auto = Boolean(props.codeAuto);
+  const link = "cursor-pointer border-0 bg-transparent p-0 text-inherit underline underline-offset-2 hover:text-foreground disabled:cursor-default disabled:opacity-60";
 
   const submit = (label: string) => (
     <AuthButton type="submit" primary className={btn} disabled={submitting} aria-busy={submitting || undefined}>
@@ -1126,10 +1136,13 @@ export function AuthFlow(props: AuthFlowProps) {
                 value={code}
                 label={t.codeLabel}
                 bad={Boolean(bad)}
-                fill
+                fill={!auto}
+                readOnly={auto && submitting}
                 onChange={(v) => {
                   if (problem?.field === "code") setProblem(null);
                   setCode(v);
+                  // codeAuto: the sixth digit is the submit (once per code — a wrong one empties the boxes).
+                  if (auto && v.length === 6 && v !== code && !submitting) verify(v);
                 }}
               />
             </div>
@@ -1137,16 +1150,28 @@ export function AuthFlow(props: AuthFlowProps) {
               <div className="-mt-3 flex justify-center">
                 <AuthError>{bad}</AuthError>
               </div>
+            ) : auto && submitting ? (
+              <div className="flex h-4 justify-center text-muted-foreground [&_svg]:size-4">
+                <Spinner label={t.busy} />
+              </div>
             ) : (
               <p className="m-0 text-center text-xs leading-4 text-muted-foreground">{notice || t.codeHint}</p>
             )}
-            <div className="flex flex-col gap-3">
-              {submit(t.continue)}
-              {outline(t.resendCode, resend, { busy: busy === "resend" })}
-            </div>
+            {auto ? (
+              <p className="m-0 text-center text-xs leading-4 text-muted-foreground">
+                <button type="button" className={link} onClick={resend} disabled={busy === "resend"} aria-busy={busy === "resend" || undefined}>
+                  {t.resendCode}
+                </button>
+              </p>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {submit(t.continue)}
+                {outline(t.resendCode, resend, { busy: busy === "resend" })}
+              </div>
+            )}
           </form>
-          <p className="mt-4 mb-0 text-center text-xs leading-4 text-muted-foreground">
-            <button type="button" className="cursor-pointer border-0 bg-transparent p-0 text-inherit underline underline-offset-2 hover:text-foreground" onClick={toEmail}>
+          <p className={cn("mb-0 text-center text-xs leading-4 text-muted-foreground", auto ? "mt-2" : "mt-4")}>
+            <button type="button" className={link} onClick={toEmail}>
               {t.otherEmail}
             </button>
           </p>
