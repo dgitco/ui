@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "../registry/dgit/styles/dgit.css";
+@import "../registry/dgit/styles/marketing.css";
 
 /* The registry sources are components too: let Tailwind see their classes. */
 @source "../registry";

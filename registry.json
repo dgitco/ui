@@ -276,6 +276,34 @@
           "type": "registry:component"
         }
       ]
+    },
+    {
+      "name": "marketing",
+      "title": "Marketing",
+      "description": "For landing and product pages only: glass nav, hero, gradient stage with window frame, feature tiles, review wall, FAQ, article cards, dot band, footer, reveal. App screens stay monochrome.",
+      "type": "registry:block",
+      "dependencies": [
+        "lucide-react"
+      ],
+      "registryDependencies": [
+        "@dgit/button",
+        "@dgit/theme"
+      ],
+      "files": [
+        {
+          "path": "registry/dgit/blocks/marketing.tsx",
+          "type": "registry:block"
+        },
+        {
+          "path": "registry/dgit/blocks/marketing-nav.tsx",
+          "type": "registry:block"
+        },
+        {
+          "path": "registry/dgit/styles/marketing.css",
+          "type": "registry:file",
+          "target": "app/marketing.css"
+        }
+      ]
     }
   ]
 }
