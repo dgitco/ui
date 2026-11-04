@@ -8,11 +8,11 @@ export function Reveal({ children, index = 0, className, as: Tag = "div" }: { ch
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = ref.current; if (!el) return;
-    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { el.classList.add("in"); io.disconnect(); } }, { rootMargin: "0px 0px -8% 0px" });
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { el.classList.add("mk-in"); io.disconnect(); } }, { rootMargin: "0px 0px -8% 0px" });
     io.observe(el); return () => io.disconnect();
   }, []);
   const T = Tag as "div";
-  return <T ref={ref} className={cn("reveal", className)} style={{ "--i": index } as CSSProperties}>{children}</T>;
+  return <T ref={ref} className={cn("mk-reveal", className)} style={{ "--i": index } as CSSProperties}>{children}</T>;
 }
 
 /** Centered first screen: optional mark, big balanced title, one muted line, one pill CTA. */
@@ -20,7 +20,7 @@ export function Hero({ mark, title, sub, cta, children }: { mark?: ReactNode; ti
   return (
     <section className="px-4 pt-12 text-center sm:pt-20">
       {mark && <Reveal index={0} className="mx-auto mb-8 flex justify-center">{mark}</Reveal>}
-      <Reveal index={1}><h1 className="text-display mx-auto max-w-[16ch] sm:max-w-3xl">{title}</h1></Reveal>
+      <Reveal index={1}><h1 className="mk-display mx-auto max-w-[16ch] sm:max-w-3xl">{title}</h1></Reveal>
       <Reveal index={2}><p className="mx-auto mt-5 max-w-[34ch] text-copy-15 font-medium text-muted-foreground sm:max-w-md sm:text-[17px] sm:leading-7">{sub}</p></Reveal>
       <Reveal index={3} className="mt-9"><Button size="lg" className="active:scale-[0.97] px-7 text-base transition-[opacity,transform] duration-300">{cta}</Button></Reveal>
       {children}
@@ -30,11 +30,11 @@ export function Hero({ mark, title, sub, cta, children }: { mark?: ReactNode; ti
 
 /** Stage: a soft grainy surface; put a WindowFrame on it to show a product shot big. */
 export function Stage({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn("stage rounded-none px-4 py-14 sm:px-[8%] sm:py-20", className)}>{children}</div>;
+  return <div className={cn("mk-stage rounded-none px-4 py-14 sm:px-[8%] sm:py-20", className)}>{children}</div>;
 }
 export function WindowFrame({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="mx-auto w-full max-w-5xl overflow-hidden rounded-xl bg-background-100/70 shadow-card backdrop-blur">
+    <div className="mx-auto w-full max-w-5xl overflow-hidden rounded-xl shadow-card mk-frame">
       <div className="flex h-8 items-center gap-1.5 px-3">
         <i className="size-2.5 rounded-full bg-[#ff5f57]" /><i className="size-2.5 rounded-full bg-[#febc2e]" /><i className="size-2.5 rounded-full bg-[#28c840]" />
         <span className="ml-3 text-label-12 text-muted-foreground">{title}</span>
@@ -48,7 +48,7 @@ export function WindowFrame({ title, children }: { title: string; children: Reac
 export function SectionHead({ title, action, center }: { title: string; action?: string; center?: boolean }) {
   return (
     <div className={cn("mb-10 flex items-end justify-between gap-6 sm:mb-14", center && "justify-center text-center")}>
-      <Reveal><h2 className="text-h1">{title}</h2></Reveal>
+      <Reveal><h2 className="mk-h1">{title}</h2></Reveal>
       {action && <a href="#top" className="active:scale-[0.97] text-copy-15 text-muted-foreground transition-colors hover:text-foreground">{action}</a>}
     </div>
   );
@@ -109,7 +109,7 @@ export function ArticleCard({ title, meta, cover, index = 0 }: { title: string; 
   return (
     <Reveal index={index}>
       <a href="#top" className="group block">
-        <div className="stage grid aspect-[5/4] place-items-center rounded-3xl text-center text-heading-30 text-white transition-transform duration-[400ms] group-hover:scale-[0.99]">{cover}</div>
+        <div className="mk-stage grid aspect-[5/4] place-items-center rounded-3xl text-center text-heading-30 text-foreground transition-transform duration-[400ms] group-hover:scale-[0.99]">{cover}</div>
         <h3 className="mt-4 text-heading-20">{title}</h3>
         <p className="mt-1 text-copy-14 text-muted-foreground">{meta}</p>
       </a>
@@ -120,8 +120,8 @@ export function ArticleCard({ title, meta, cover, index = 0 }: { title: string; 
 /** Closing band: a big sentence and a CTA on a dot grid. */
 export function DotBand({ title, cta }: { title: string; cta: string }) {
   return (
-    <div className="dots relative overflow-hidden rounded-[32px] bg-gray-100 px-6 py-20 text-center sm:py-28">
-      <h2 className="text-h1 mx-auto max-w-[18ch]">{title}</h2>
+    <div className="mk-dots relative overflow-hidden rounded-[32px] bg-gray-100 px-6 py-20 text-center sm:py-28">
+      <h2 className="mk-h1 mx-auto max-w-[18ch]">{title}</h2>
       <Button size="lg" className="active:scale-[0.97] mt-8 px-7 text-base">{cta}</Button>
     </div>
   );

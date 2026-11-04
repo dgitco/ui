@@ -1,66 +1,61 @@
-/* DGit UI marketing layer. Import after dgit.css for landing and product pages ONLY — app screens stay monochrome.
- * Gradient stage, glass nav, soft shadow and the reveal animation live here. Set <html data-marketing="flat"> to turn the stage/glass/shadow off. */
+/*
+ * DGit UI marketing layer. Import after dgit.css, for landing and product pages ONLY; app screens stay monochrome.
+ * Everything here is prefixed (--mk-*, .mk-*) so nothing leaks into the rest of the app.
+ * Set <html data-marketing="flat"> to turn off the stage gradient, glass, blur and shadow (gray surfaces only).
+ */
 :root {
-  /* Motion values in one place. */
-  --dur-hover: 150ms;
-  --dur-press: 100ms;
-  --dur-cta: 300ms;
-  --dur-disclosure: 300ms;
-  --dur-swap: 260ms;
-  --dur-cascade: 480ms;
-  --stagger: 70ms;
-  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --canvas-soft: hsla(var(--dgit-background-200), 1);
-  --stage-a: #d9d9de;
-  --stage-b: #f1f1f3;
-  --stage-c: #9a9aa2;
-  --glass: hsla(var(--dgit-background-200), 0.8);
-  --glass-modal: #dedee0cc;
-  --dot: hsla(var(--dgit-gray-1000), 0.18);
+  --mk-dur-hover: 150ms;
+  --mk-dur-cascade: 480ms;
+  --mk-stagger: 70ms;
+  --mk-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --mk-stage-a: #d9d9de;
+  --mk-stage-b: #f1f1f3;
+  --mk-stage-c: #9a9aa2;
+  --mk-glass: hsla(var(--dgit-background-200), 0.8);
+  --mk-glass-modal: #dedee0cc;
+  --mk-dot: hsla(var(--dgit-gray-1000), 0.18);
 }
-:root[data-theme="dark"] { --stage-a: #1c1c20; --stage-b: #2a2a30; --stage-c: #0c0c0e; --glass-modal: #26262acc; --dot: hsla(var(--dgit-gray-1000), 0.22); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme]) { --stage-a: #1c1c20; --stage-b: #2a2a30; --stage-c: #0c0c0e; --glass-modal: #26262acc; --dot: hsla(var(--dgit-gray-1000), 0.22); } }
+:root[data-theme="dark"] { --mk-stage-a: #1c1c20; --mk-stage-b: #2a2a30; --mk-stage-c: #0c0c0e; --mk-glass-modal: #26262acc; --mk-dot: hsla(var(--dgit-gray-1000), 0.22); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme]) { --mk-stage-a: #1c1c20; --mk-stage-b: #2a2a30; --mk-stage-c: #0c0c0e; --mk-glass-modal: #26262acc; --mk-dot: hsla(var(--dgit-gray-1000), 0.22); } }
 
-@theme inline {
-  --text-display: 60px; --text-display--line-height: 72px; --text-display--font-weight: 700; --text-display--letter-spacing: -1.8px;
-  --text-h1: 50px; --text-h1--line-height: 62px; --text-h1--font-weight: 650; --text-h1--letter-spacing: -1.5px;
-  --text-h2: 40px; --text-h2--line-height: 50px; --text-h2--font-weight: 650; --text-h2--letter-spacing: -1.2px;
-}
-.text-display, .text-h1, .text-h2 { text-wrap: balance; word-break: keep-all; }
+/* Big type steps, used only by marketing blocks. */
+.mk-display, .mk-h1, .mk-h2 { text-wrap: balance; word-break: keep-all; }
+.mk-display { font-size: 60px; line-height: 72px; font-weight: 700; letter-spacing: -1.8px; }
+.mk-h1 { font-size: 50px; line-height: 62px; font-weight: 650; letter-spacing: -1.5px; }
+.mk-h2 { font-size: 40px; line-height: 50px; font-weight: 650; letter-spacing: -1.2px; }
 @media (max-width: 640px) {
-  .text-display { font-size: 30px; line-height: 39px; letter-spacing: -0.9px; }
-  .text-h1 { font-size: 30px; line-height: 39px; letter-spacing: -0.9px; }
-  .text-h2 { font-size: 26px; line-height: 34px; letter-spacing: -0.8px; }
+  .mk-display, .mk-h1 { font-size: 30px; line-height: 39px; letter-spacing: -0.9px; }
+  .mk-h2 { font-size: 26px; line-height: 34px; letter-spacing: -0.8px; }
 }
 
 /* Rise-in; siblings stagger by --i * 70ms. */
-.reveal { opacity: 0; transform: translateY(14px); }
-.reveal.in { animation: cascade-in var(--dur-cascade) var(--ease-out) both; animation-delay: calc(var(--i, 0) * var(--stagger)); }
-@keyframes cascade-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.mk-reveal { opacity: 0; transform: translateY(14px); }
+.mk-reveal.mk-in { animation: mk-cascade-in var(--mk-dur-cascade) var(--mk-ease) both; animation-delay: calc(var(--i, 0) * var(--mk-stagger)); }
+@keyframes mk-cascade-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce), print { .mk-reveal { opacity: 1; transform: none; } .mk-reveal.mk-in { animation: none; } }
 
-/* Stage: a soft grainy surface behind product shots. Marketing only. */
-.stage {
+/* Stage: a soft grainy surface behind product shots. */
+.mk-stage {
   position: relative; isolation: isolate; overflow: hidden;
   background:
-    radial-gradient(120% 90% at 0% 0%, var(--stage-b) 0%, transparent 55%),
-    radial-gradient(90% 80% at 100% 100%, var(--stage-c) 0%, transparent 60%),
-    var(--stage-a);
+    radial-gradient(120% 90% at 0% 0%, var(--mk-stage-b) 0%, transparent 55%),
+    radial-gradient(90% 80% at 100% 100%, var(--mk-stage-c) 0%, transparent 60%),
+    var(--mk-stage-a);
 }
-.stage::after {
+.mk-stage::after {
   content: ""; position: absolute; inset: 0; z-index: -1; opacity: 0.35; mix-blend-mode: multiply; pointer-events: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
-/* Dot grid. */
-.dots { background-image: radial-gradient(var(--dot) 1px, transparent 1.2px); background-size: 24px 24px; }
-.glass { background: var(--glass-modal); backdrop-filter: blur(40px) saturate(1.4); -webkit-backdrop-filter: blur(40px) saturate(1.4); }
-.nav-glass { background: linear-gradient(var(--glass) 80%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
-.soft-shadow { box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 10px 24px -8px rgba(0,0,0,.10); }
-.press { transition: transform var(--dur-press) var(--ease-out), background-color var(--dur-hover), opacity var(--dur-hover), box-shadow var(--dur-hover); }
-.press:active { transform: scale(0.97); }
-@media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; } .reveal.in { animation: none; } .press:active { transform: none; } }
+.mk-dots { background-image: radial-gradient(var(--mk-dot) 1px, transparent 1.2px); background-size: 24px 24px; }
+.mk-glass { background: var(--mk-glass-modal); backdrop-filter: blur(40px) saturate(1.4); -webkit-backdrop-filter: blur(40px) saturate(1.4); }
+.mk-frame { background: hsla(var(--dgit-background-100), 0.7); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.mk-nav { background: linear-gradient(var(--mk-glass) 80%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+.mk-shadow { box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 10px 24px -8px rgba(0,0,0,.10); }
 
-
-html[data-marketing="flat"] .stage { background: hsla(var(--dgit-gray-100), 1); }
-html[data-marketing="flat"] .stage::after { display: none; }
-html[data-marketing="flat"] .soft-shadow { box-shadow: 0 0 0 1px hsla(var(--dgit-gray-300), 1); }
-html[data-marketing="flat"] .glass { background: hsla(var(--dgit-background-100), 1); backdrop-filter: none; -webkit-backdrop-filter: none; }
+/* Flat variant: same blocks, gray surfaces only. */
+html[data-marketing="flat"] .mk-stage { background: hsla(var(--dgit-gray-100), 1); }
+html[data-marketing="flat"] .mk-stage::after { display: none; }
+html[data-marketing="flat"] .mk-shadow { box-shadow: 0 0 0 1px hsla(var(--dgit-gray-300), 1); }
+html[data-marketing="flat"] .mk-glass,
+html[data-marketing="flat"] .mk-frame { background: hsla(var(--dgit-background-100), 1); backdrop-filter: none; -webkit-backdrop-filter: none; }
+html[data-marketing="flat"] .mk-nav { background: hsla(var(--dgit-background-200), 1); backdrop-filter: none; -webkit-backdrop-filter: none; }
