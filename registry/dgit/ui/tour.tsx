@@ -8,7 +8,7 @@ export type TourStep = { title: string; body: string; preview: ReactNode };
 export function TourTip({ steps, toolbar, onDone, nextLabel = "Next", doneLabel = "Got it", replayLabel = "Show the tour again", label = "Tool tour" }: { steps: TourStep[]; toolbar: LucideIcon[]; onDone?: () => void; nextLabel?: string; doneLabel?: string; replayLabel?: string; label?: string }) {
   const [i, setI] = useState(0);
   const [gone, setGone] = useState(false);
-  if (gone) return <Button variant="outline" size="sm" onClick={() => { setI(0); setGone(false); }}>{replayLabel}</Button>;
+  if (gone) return <Button autoFocus variant="outline" size="sm" onClick={() => { setI(0); setGone(false); }}>{replayLabel}</Button>;
   const s = steps[i], last = i === steps.length - 1;
   return (
     <div className="mx-auto flex w-full max-w-[320px] flex-col items-center">
@@ -34,10 +34,10 @@ export function TourTip({ steps, toolbar, onDone, nextLabel = "Next", doneLabel 
 /** Get-started checklist: one item open at a time (preview + body), checkbox on the right, close button. */
 export type CheckItem = { id: string; title: string; body: string; preview: ReactNode };
 export function Checklist({ title, items, openLabel = "Open checklist", closeLabel = "Close checklist" }: { title: string; items: CheckItem[]; openLabel?: string; closeLabel?: string }) {
-  const [open, setOpen] = useState(items[0].id);
+  const [open, setOpen] = useState(items[0]?.id ?? "");
   const [done, setDone] = useState<Record<string, boolean>>({});
   const [shown, setShown] = useState(true);
-  if (!shown) return <Button variant="outline" size="sm" onClick={() => setShown(true)}>{openLabel}</Button>;
+  if (!shown) return <Button autoFocus variant="outline" size="sm" onClick={() => setShown(true)}>{openLabel}</Button>;
   const n = items.filter((x) => done[x.id]).length;
   return (
     <div className="shadow-card w-full max-w-[340px] rounded-3xl bg-background-100 p-2">
@@ -50,12 +50,12 @@ export function Checklist({ title, items, openLabel = "Open checklist", closeLab
         return (
           <div key={it.id} className={cn("rounded-2xl transition-colors", on && "bg-gray-100")}>
             <div className="flex items-center justify-between gap-3 px-3 py-2.5">
-              <button type="button" aria-expanded={on} onClick={() => setOpen(on ? "" : it.id)} className="flex-1 text-left text-heading-14">{it.title}</button>
-              <button type="button" role="checkbox" aria-checked={!!done[it.id]} aria-label={`${it.title}, done`} onClick={() => setDone({ ...done, [it.id]: !done[it.id] })}
+              <button type="button" aria-expanded={on} aria-controls={`tour-${it.id}`} onClick={() => setOpen(on ? "" : it.id)} className="flex-1 text-left text-heading-14">{it.title}</button>
+              <button type="button" role="checkbox" aria-checked={!!done[it.id]} aria-label={it.title} onClick={() => setDone({ ...done, [it.id]: !done[it.id] })}
                 className={cn("active:scale-[0.97] flex size-5 items-center justify-center rounded-md border transition-colors", done[it.id] ? "border-foreground bg-foreground text-background" : "border-gray-600")}>{done[it.id] && <Check className="size-3.5" />}</button>
             </div>
             <div className={cn("grid transition-[grid-template-rows] duration-300", on ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}>
-              <div className="min-h-0 overflow-hidden"><div className="px-3 pb-3"><div className="overflow-hidden rounded-xl bg-background-100">{it.preview}</div><p className="mt-2 text-copy-13 text-muted-foreground">{it.body}</p></div></div>
+              <div id={`tour-${it.id}`} className="min-h-0 overflow-hidden" inert={!on}><div className="px-3 pb-3"><div className="overflow-hidden rounded-xl bg-background-100">{it.preview}</div><p className="mt-2 text-copy-13 text-muted-foreground">{it.body}</p></div></div>
             </div>
           </div>
         );

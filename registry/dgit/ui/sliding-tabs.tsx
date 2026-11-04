@@ -6,8 +6,14 @@ export function SlidingTabs<T extends string>({ value, options, onChange, label 
   const refs = useRef<Record<string, HTMLButtonElement | null>>({});
   const [box, setBox] = useState({ x: 0, w: 0, ready: false });
   useLayoutEffect(() => {
-    const el = refs.current[value]; if (!el) return;
-    setBox({ x: el.offsetLeft, w: el.offsetWidth, ready: true });
+    const measure = () => {
+      const el = refs.current[value]; if (!el) return;
+      setBox({ x: el.offsetLeft, w: el.offsetWidth, ready: true });
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    document.fonts?.ready.then(measure);
+    return () => window.removeEventListener("resize", measure);
   }, [value, options]);
   const onKey = (e: KeyboardEvent) => {
     const i = options.findIndex((o) => o.value === value);
@@ -19,7 +25,7 @@ export function SlidingTabs<T extends string>({ value, options, onChange, label 
       <div role="tablist" aria-label={label} onKeyDown={onKey} className="relative inline-flex rounded-full bg-gray-200 p-1">
         <span aria-hidden className={cn("shadow-card absolute top-1 bottom-1 rounded-full bg-background-100", box.ready && "transition-[transform,width] duration-300 ease-out")} style={{ width: box.w, transform: `translateX(${box.x}px)` }} />
         {options.map((o) => (
-          <button key={o.value} ref={(el) => { refs.current[o.value] = el; }} role="tab" aria-selected={value === o.value} tabIndex={value === o.value ? 0 : -1} onClick={() => onChange(o.value)}
+          <button key={o.value} ref={(el) => { refs.current[o.value] = el; }} type="button" role="tab" aria-selected={value === o.value} tabIndex={value === o.value ? 0 : -1} onClick={() => onChange(o.value)}
             className={cn("relative z-10 whitespace-nowrap rounded-full px-5 py-2 text-heading-16 transition-colors duration-150", value === o.value ? "text-foreground" : "text-muted-foreground hover:text-foreground")}>{o.label}</button>
         ))}
       </div>

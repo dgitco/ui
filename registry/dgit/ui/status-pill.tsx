@@ -14,4 +14,4 @@ export function StatusPill({ icon: Icon, label, tone: t = "neutral", pressed, on
   );
 }
 /** Icons for the usual statuses and actions. */
-export const statusIcons = { bad: AlertCircle, warn: XCircle, ok: CheckCircle2, next: ChevronRight, add: Plus, search: Search };
+export const statusIcons = { bad: XCircle, warn: AlertCircle, ok: CheckCircle2, next: ChevronRight, add: Plus, search: Search };

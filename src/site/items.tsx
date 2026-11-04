@@ -557,10 +557,10 @@ const search = docsSearch({ index: "/search.json" }); // search.button in the he
     title: "Swatch palette",
     kind: "component",
     summary: "A color grid. The last cell, +, adds your own.",
-    preview: () => <SwatchPalette colors={["#e7e7e7", "#c9b8ad", "#76767f", "#f2704f", "#fb9e2f", "#fcd824", "#58c967", "#07bfe0", "#2c92dd", "#9a73ef", "#f77fc4"]} />,
+    preview: () => <SwatchPalette colors={["oklch(0.92 0 0)", "oklch(0.8 0.03 60)", "oklch(0.55 0.02 280)", "oklch(0.7 0.18 35)", "oklch(0.8 0.17 70)", "oklch(0.88 0.17 100)", "oklch(0.75 0.17 150)", "oklch(0.78 0.13 210)", "oklch(0.65 0.15 250)", "oklch(0.65 0.2 295)", "oklch(0.75 0.18 350)"]} onAdd={() => `oklch(0.72 0.14 ${Math.round(Math.random() * 360)})`} />,
     usage: `import { SwatchPalette } from "@/components/ui/swatch";
 
-<SwatchPalette colors={colors} onAdd={(c) => save(c)} />`,
+<SwatchPalette colors={colors} onChange={setColor} onAdd={() => pickFromSystem()} />`,
   },
   {
     name: "app-header",
