@@ -6,6 +6,11 @@ import { CopyField } from "@/registry/dgit/ui/copy";
 import { Kbd, Menu, MenuItem, MenuLabel, MenuSeparator } from "@/registry/dgit/ui/menu";
 import { List, Notice, PageHeader, Section } from "@/registry/dgit/ui/page";
 import { Segmented } from "@/registry/dgit/ui/segmented";
+import { StatusPill, statusIcons } from "@/registry/dgit/ui/status-pill";
+import { SlidingTabs } from "@/registry/dgit/ui/sliding-tabs";
+import { DateStrip } from "@/registry/dgit/ui/date-strip";
+import { TourTip, Checklist } from "@/registry/dgit/ui/tour";
+import { SwatchPalette } from "@/registry/dgit/ui/swatch";
 import { AppHeader, navPill } from "@/registry/dgit/blocks/app-header";
 import { ScopeSwitcher, SidebarLayout, type LinkRenderer, type NavItem, type NavLayer } from "@/registry/dgit/blocks/sidebar-layout";
 import { AuthButton, AuthCodeField, AuthDivider, AuthField, AuthLayout, AuthNote, AuthTitle } from "@/registry/dgit/blocks/auth-page";
@@ -103,6 +108,43 @@ function PageDemo() {
         </List>
       </Section>
       <Notice>Copy your new token now. It won't be shown again.</Notice>
+    </div>
+  );
+}
+
+function StatusPillDemo() {
+  const [on, setOn] = useState<string | null>(null);
+  const rows = [["bad", "Needs fix", "bad"], ["warn", "At risk", "warn"], ["ok", "Verified", "ok"], ["next", "View details", "neutral"], ["add", "New project", "neutral"]] as const;
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-3">
+      {rows.map(([k, label, tone]) => <StatusPill key={k} icon={statusIcons[k]} label={label} tone={tone} pressed={on === k} onClick={() => setOn(on === k ? null : k)} />)}
+    </div>
+  );
+}
+
+function SlidingTabsDemo() {
+  const [v, setV] = useState<"all" | "fix" | "risk" | "ok">("all");
+  const rows = [["Deploy login", "fix"], ["Sync projects", "risk"], ["Rotate keys", "ok"], ["Backups", "ok"]] as const;
+  return (
+    <div className="flex w-full max-w-sm flex-col items-center gap-4">
+      <SlidingTabs label="Status" value={v} onChange={setV} options={[{ value: "all", label: "All" }, { value: "fix", label: "Needs fix" }, { value: "risk", label: "At risk" }, { value: "ok", label: "Verified" }]} />
+      <List className="w-full">{rows.filter((r) => v === "all" || r[1] === v).map((r) => <div key={r[0]} className="px-4 py-3 text-copy-14">{r[0]}</div>)}</List>
+    </div>
+  );
+}
+
+function DateStripDemo() {
+  const days = ["W", "T", "F", "S", "S", "M"].map((dow, i) => ({ key: `d${i}`, dow, n: 9 + i }));
+  const [v, setV] = useState("d1");
+  return <DateStrip days={days} value={v} onChange={setV} />;
+}
+
+function TourDemo() {
+  const Box = ({ t }: { t: string }) => <div className="grid h-24 place-items-center text-label-13 text-muted-foreground">{t}</div>;
+  return (
+    <div className="flex flex-wrap items-start justify-center gap-10">
+      <TourTip toolbar={[FolderGit2, LayoutGrid, Boxes, Settings]} steps={[{ title: "Projects", body: "Everything you build lives here.", preview: <Box t="Preview" /> }, { title: "Boards", body: "Lay cards out on one page.", preview: <Box t="Preview" /> }]} />
+      <Checklist title="Get started" items={[{ id: "a", title: "Meet the toolbar", body: "Know what you can create.", preview: <Box t="Preview" /> }, { id: "b", title: "Write a page", body: "Notes that sit beside the canvas.", preview: <Box t="Preview" /> }]} />
     </div>
   );
 }
@@ -467,6 +509,58 @@ const search = docsSearch({ index: "/search.json" }); // search.button in the he
 
 <Segmented value={kind} onChange={setKind}
   options={[{ value: "secret", label: "Secret" }, { value: "variable", label: "Variable" }]} />`,
+  },
+  {
+    name: "status-pill",
+    title: "Status pill",
+    kind: "component",
+    summary: "A pill with a round icon well. Status color lives only on the icon; the body stays white.",
+    preview: () => <StatusPillDemo />,
+    usage: `import { StatusPill, statusIcons } from "@/components/ui/status-pill";
+
+<StatusPill icon={statusIcons.ok} tone="ok" label="Verified" />`,
+  },
+  {
+    name: "sliding-tabs",
+    title: "Sliding tabs",
+    kind: "component",
+    summary: "Filter tabs: one white pill glides to the chosen tab. Arrow keys move; it scrolls sideways when narrow.",
+    preview: () => <SlidingTabsDemo />,
+    usage: `import { SlidingTabs } from "@/components/ui/sliding-tabs";
+
+<SlidingTabs label="Status" value={tab} onChange={setTab}
+  options={[{ value: "all", label: "All" }, { value: "fix", label: "Needs fix" }]} />`,
+  },
+  {
+    name: "date-strip",
+    title: "Date strip",
+    kind: "component",
+    summary: "Pick a day. Only the chosen day floats, as a large card with a big number.",
+    preview: () => <DateStripDemo />,
+    usage: `import { DateStrip } from "@/components/ui/date-strip";
+
+<DateStrip days={[{ key: "d1", dow: "T", n: 10 }]} value={day} onChange={setDay} />`,
+  },
+  {
+    name: "tour",
+    title: "Tour",
+    kind: "component",
+    summary: "A first-run tip card joined to a toolbar, and a get-started checklist that opens one item at a time.",
+    preview: () => <TourDemo />,
+    usage: `import { TourTip, Checklist } from "@/components/ui/tour";
+
+<TourTip toolbar={[Icon1, Icon2]} steps={[{ title: "Notes", body: "…", preview: <img … /> }]} />
+<Checklist title="Get started" items={[{ id: "a", title: "…", body: "…", preview: <img … /> }]} />`,
+  },
+  {
+    name: "swatch",
+    title: "Swatch palette",
+    kind: "component",
+    summary: "A color grid. The last cell, +, adds your own.",
+    preview: () => <SwatchPalette colors={["oklch(0.92 0 0)", "oklch(0.8 0.03 60)", "oklch(0.55 0.02 280)", "oklch(0.7 0.18 35)", "oklch(0.8 0.17 70)", "oklch(0.88 0.17 100)", "oklch(0.75 0.17 150)", "oklch(0.78 0.13 210)", "oklch(0.65 0.15 250)", "oklch(0.65 0.2 295)", "oklch(0.75 0.18 350)"]} onAdd={() => `oklch(0.72 0.14 ${Math.round(Math.random() * 360)})`} />,
+    usage: `import { SwatchPalette } from "@/components/ui/swatch";
+
+<SwatchPalette colors={colors} onChange={setColor} onAdd={() => pickFromSystem()} />`,
   },
   {
     name: "app-header",
