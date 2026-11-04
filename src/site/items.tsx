@@ -16,6 +16,8 @@ import { ScopeSwitcher, SidebarLayout, type LinkRenderer, type NavItem, type Nav
 import { AuthButton, AuthCodeField, AuthDivider, AuthField, AuthLayout, AuthNote, AuthTitle } from "@/registry/dgit/blocks/auth-page";
 import { AuthFlow, type AuthResult, type LookupAnswer } from "@/registry/dgit/blocks/auth-flow";
 import { useTheme } from "@/registry/dgit/lib/theme";
+import { NavBar } from "@/registry/dgit/blocks/marketing-nav";
+import { ArticleCard, DotBand, Faq, FeatureTile, Footer, Hero, ReviewWall, SectionHead, Stage, WindowFrame } from "@/registry/dgit/blocks/marketing";
 import { DGitChip } from "./mark";
 import { DocsDemo } from "./docs-demo";
 
@@ -145,6 +147,26 @@ function TourDemo() {
     <div className="flex flex-wrap items-start justify-center gap-10">
       <TourTip toolbar={[FolderGit2, LayoutGrid, Boxes, Settings]} steps={[{ title: "Projects", body: "Everything you build lives here.", preview: <Box t="Preview" /> }, { title: "Boards", body: "Lay cards out on one page.", preview: <Box t="Preview" /> }]} />
       <Checklist title="Get started" items={[{ id: "a", title: "Meet the toolbar", body: "Know what you can create.", preview: <Box t="Preview" /> }, { id: "b", title: "Write a page", body: "Notes that sit beside the canvas.", preview: <Box t="Preview" /> }]} />
+    </div>
+  );
+}
+
+function MarketingDemo() {
+  const Ph = ({ t }: { t: string }) => <div className="grid h-full place-items-center text-label-13 text-muted-foreground">{t}</div>;
+  return (
+    <div className="marketing-scope">
+      <NavBar brand="Acme" cta="Get started" links={[{ label: "Home" }, { label: "Solutions", menu: ["Teams", "Solo"] }, { label: "Pricing" }]} />
+      <Hero title="Everything in one place." sub="Notes, plans and files on a single canvas." cta="Get started" />
+      <div className="mt-10"><Stage><WindowFrame title="Project"><Ph t="Product screenshot" /></WindowFrame></Stage></div>
+      <div className="mx-auto max-w-5xl px-4 py-14">
+        <SectionHead title="Built for focus" center />
+        <div className="grid gap-6 sm:grid-cols-3">{["Plan", "Track", "Hand off"].map((t, i) => <FeatureTile key={t} index={i} title={t} body="One line on what it does." visual={<Ph t="Demo" />} />)}</div>
+        <div className="mt-16"><SectionHead title="What people say" /><ReviewWall items={[{ name: "Ada", role: "Designer", text: "Simple and clean. I stopped juggling tabs." }, { name: "Lin", role: "Engineer", text: "Everything I need sits in one place." }]} /></div>
+        <div className="mx-auto mt-16 max-w-3xl"><SectionHead title="Questions" /><Faq items={[{ q: "Is it free?", a: "Yes, to start." }, { q: "Can I invite my team?", a: "Yes, anyone with a link." }]} /></div>
+        <div className="mt-16"><SectionHead title="Articles" action="See all" /><div className="grid gap-6 sm:grid-cols-3"><ArticleCard title="How we built it" meta="Guide · 5 min" cover="Guide" /><ArticleCard index={1} title="Meet the canvas" meta="Product · 3 min" cover="Canvas" /></div></div>
+      </div>
+      <div className="px-4"><DotBand title="Start today." cta="Get started" /></div>
+      <Footer word="acme" cols={[{ title: "Product", links: ["Features", "FAQ"] }, { title: "Company", links: ["About", "Contact"] }]} />
     </div>
   );
 }
@@ -561,6 +583,21 @@ const search = docsSearch({ index: "/search.json" }); // search.button in the he
     usage: `import { SwatchPalette } from "@/components/ui/swatch";
 
 <SwatchPalette colors={colors} onChange={setColor} onAdd={() => pickFromSystem()} />`,
+  },
+  {
+    name: "marketing",
+    title: "Marketing",
+    kind: "block",
+    summary: "For landing and product pages only: glass nav, hero, gradient stage, feature tiles, review wall, FAQ, article cards, dot band, footer. App screens stay monochrome.",
+    preview: () => <MarketingDemo />,
+    frame: 900,
+    usage: `// app/globals.css — after dgit.css; marketing pages only
+@import "./marketing.css";
+
+import { NavBar } from "@/components/marketing-nav";
+import { Hero, Stage, WindowFrame, FeatureTile, Faq, Footer } from "@/components/marketing";
+
+// Flat variant (no stage gradient, glass, or shadow): <html data-marketing="flat">`,
   },
   {
     name: "app-header",
