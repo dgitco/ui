@@ -109,6 +109,8 @@ private struct ReservesTabBar: ViewModifier {
             .toolbarVisibility(.hidden, for: .tabBar)
             .safeAreaPadding(.bottom, max(8, DGitTabBar<Int>.reserved + 8 - safeBottom))
             .onAppear { safeBottom = Self.windowBottom() ?? safeBottom }
+            // 화면이 돌거나 창 크기가 바뀌면 창에서 다시 읽음(내용 쪽 값은 안 읽어 여백과 돌지 않음, 리뷰)
+            .onGeometryChange(for: CGSize.self, of: { $0.size }) { _ in safeBottom = Self.windowBottom() ?? safeBottom }
     }
     @MainActor static func windowBottom() -> CGFloat? {
         let w = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.flatMap(\.windows).first { $0.isKeyWindow }
