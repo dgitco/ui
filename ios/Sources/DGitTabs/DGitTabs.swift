@@ -69,9 +69,9 @@ public struct FloatingTabAction<Icon: View>: View {
         self.state = state; self.label = label; self.id = id; self.action = action; self.icon = icon
     }
 
-    /// 막대 위 자리(보더에서 잰 값): 오른쪽 21 · 아래 92
-    public static var trailing: CGFloat { 21 }
-    public static var bottom: CGFloat { 92 }
+    /// 막대 위 자리: 오른쪽은 막대 끝과 맞춤, 아래는 막대 위 12
+    public static var trailing: CGFloat { DGitTabBar<Int>.margin + 6 }
+    public static var bottom: CGFloat { DGitTabBar<Int>.reserved + 12 }
 
     public var body: some View {
         Group {
@@ -95,12 +95,14 @@ public struct FloatingTabAction<Icon: View>: View {
 /// 앱이 그린 얼굴 화면을 탭 막대가 쓸 수 있는 그림으로 바꿈(시스템 막대는 그림 · 기호만 받음). 고른 탭이면 테두리.
 @MainActor
 public enum FaceTabIcon {
-    public static let size: CGFloat = 28
-    public static func image<Face: View>(_ face: Face, selected: Bool) -> Image {
+    public static let size: CGFloat = 30
+    /// scheme = 지금 화면의 밝음 · 어두움 — 그림으로 굳히므로 그때 색으로 그림(어두운 화면에서 얼굴이 안 보이지 않게)
+    public static func image<Face: View>(_ face: Face, selected: Bool, scheme: ColorScheme) -> Image {
         let v = face.frame(width: size, height: size)
             .clipShape(Circle())
             .overlay(Circle().stroke(selected ? Color.primary : Color.clear, lineWidth: 2))
             .frame(width: size + 4, height: size + 4)
+            .environment(\.colorScheme, scheme)
         let r = ImageRenderer(content: v); r.scale = UITraitCollection.current.displayScale
         guard let ui = r.uiImage else { return Image(systemName: "person.crop.circle") }
         return Image(uiImage: ui.withRenderingMode(.alwaysOriginal))
