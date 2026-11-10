@@ -89,6 +89,6 @@ private struct ReservesTabBar: ViewModifier {
             .toolbarVisibility(.hidden, for: .tabBar)
             .safeAreaPadding(.bottom, max(8, DGitTabBar<Int>.reserved + 8 - safeBottom))
             // 홈 표시 줄만 잼 — 키보드 높이는 빼야 키보드가 떠도 남길 자리가 줄지 않음(리뷰)
-            .background { Color.clear.ignoresSafeArea(.keyboard).onGeometryChange(for: CGFloat.self, of: { $0.safeAreaInsets.bottom }) { safeBottom = $0 } }
+            .background { Color.clear.onGeometryChange(for: CGFloat.self, of: { $0.safeAreaInsets.bottom }) { safeBottom = $0 }.ignoresSafeArea(.keyboard) }   // 재는 쪽까지 키보드 제외 안에(리뷰)
     }
 }
