@@ -69,9 +69,9 @@ public struct FloatingTabAction<Icon: View>: View {
         self.state = state; self.label = label; self.id = id; self.action = action; self.icon = icon
     }
 
-    /// 막대 위 자리(보더에서 잰 값): 오른쪽 21 · 아래 92
-    public static var trailing: CGFloat { 21 }
-    public static var bottom: CGFloat { 92 }
+    /// 막대 위 자리: 오른쪽은 막대 끝과 맞춤, 아래는 막대 위 12
+    public static var trailing: CGFloat { DGitTabBar<Int>.margin + 6 }
+    public static var bottom: CGFloat { DGitTabBar<Int>.reserved + 12 }
 
     public var body: some View {
         Group {
