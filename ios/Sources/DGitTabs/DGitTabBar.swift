@@ -77,8 +77,16 @@ public struct DGitTabBar<ID: Hashable>: View {
 
 public extension View {
     /// 탭마다 내용에 — 시스템 막대는 숨기고, 아래 내용이 DGitTabBar 에 가리지 않게 자리를 남김(굴린 내용은 막대 밑으로 지나감)
-    func reservesDGitTabBar() -> some View {
-        toolbarVisibility(.hidden, for: .tabBar)
-            .safeAreaPadding(.bottom, DGitTabBar<Int>.reserved - 20)
+    func reservesDGitTabBar() -> some View { modifier(ReservesTabBar()) }
+}
+
+/// 남길 자리 = 막대(높이 + 아래 끝 간격) + 8 − 이미 있는 아래 안전 영역(홈 표시 줄). 홈 표시 줄이 없는 화면도 가리지 않게 실제 값을 잼(리뷰)
+private struct ReservesTabBar: ViewModifier {
+    @State private var safeBottom: CGFloat = 34
+    func body(content: Content) -> some View {
+        content
+            .toolbarVisibility(.hidden, for: .tabBar)
+            .safeAreaPadding(.bottom, max(8, DGitTabBar<Int>.reserved + 8 - safeBottom))
+            .onGeometryChange(for: CGFloat.self, of: { $0.safeAreaInsets.bottom }) { safeBottom = $0 }
     }
 }
