@@ -10,7 +10,11 @@ public struct DGitTabBar<ID: Hashable>: View {
         /// 고름 → 아이콘(채운 · 빈 아이콘, 또는 얼굴 그림)
         public var icon: (Bool) -> Image
         public var badge: Int
-        public init(id: ID, label: String, badge: Int = 0, icon: @escaping (Bool) -> Image) { self.id = id; self.label = label; self.badge = badge; self.icon = icon }
+        /// 배지를 VoiceOver 로 읽을 말(예 콜스 「3 missed」, 보더 「안 읽음 3」) — 없으면 숫자
+        public var badgeSpoken: ((Int) -> String)?
+        public init(id: ID, label: String, badge: Int = 0, badgeSpoken: ((Int) -> String)? = nil, icon: @escaping (Bool) -> Image) {
+            self.id = id; self.label = label; self.badge = badge; self.badgeSpoken = badgeSpoken; self.icon = icon
+        }
     }
 
     public static var margin: CGFloat { 15 }
@@ -56,6 +60,7 @@ public struct DGitTabBar<ID: Hashable>: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(it.label)
+                .accessibilityValue(it.badge > 0 ? (it.badgeSpoken?(it.badge) ?? "\(it.badge)") : "")   // 배지도 읽어 줌(리뷰)
                 .accessibilityAddTraits(on ? .isSelected : [])
                 .accessibilityIdentifier("tab.\(String(describing: it.id))")
             }
