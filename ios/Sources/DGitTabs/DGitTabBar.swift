@@ -72,6 +72,7 @@ public struct DGitTabBar<ID: Hashable>: View {
         .opacity(state.hidden ? 0 : 1)
         .animation(.easeInOut(duration: 0.25), value: state.hidden)
         .ignoresSafeArea(.container, edges: .bottom)
+        .ignoresSafeArea(.keyboard)   // 키보드가 떠도 화면 아래에 머묾(키보드 뒤로 가려짐)
     }
 }
 
@@ -87,6 +88,7 @@ private struct ReservesTabBar: ViewModifier {
         content
             .toolbarVisibility(.hidden, for: .tabBar)
             .safeAreaPadding(.bottom, max(8, DGitTabBar<Int>.reserved + 8 - safeBottom))
-            .onGeometryChange(for: CGFloat.self, of: { $0.safeAreaInsets.bottom }) { safeBottom = $0 }
+            // 홈 표시 줄만 잼 — 키보드 높이는 빼야 키보드가 떠도 남길 자리가 줄지 않음(리뷰)
+            .background { Color.clear.ignoresSafeArea(.keyboard).onGeometryChange(for: CGFloat.self, of: { $0.safeAreaInsets.bottom }) { safeBottom = $0 } }
     }
 }
