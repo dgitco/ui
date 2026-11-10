@@ -34,7 +34,7 @@ public struct DGitTabBar<ID: Hashable>: View {
     public init(selection: Binding<ID>, items: [Item], state: TabBarState) { _selection = selection; self.items = items; self.state = state }
 
     public var body: some View {
-        GeometryReader { g in bar.contentShape(Capsule()).simultaneousGesture(drag(width: g.size.width)) }
+        GeometryReader { g in bar.contentShape(Capsule()).highPriorityGesture(drag(width: g.size.width)) }   // 끌기가 단추보다 먼저(그냥 누르기는 단추로 — 12pt 넘게 움직여야 끌기)
             .frame(height: Self.height)
             .background {
                 if solid { Capsule().fill(Color(.secondarySystemBackground)) }
