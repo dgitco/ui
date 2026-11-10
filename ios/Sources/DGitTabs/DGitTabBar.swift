@@ -20,7 +20,8 @@ public struct DGitTabBar<ID: Hashable>: View {
 
     public static var margin: CGFloat { 15 }
     public static var height: CGFloat { 56 }
-    public static var bottom: CGFloat { 8 }
+    /// 화면 아래 끝에서 막대 아래까지 — 바꾸기 전 iOS 기본 탭 막대와 같은 21pt(Bobby 11/10 「원래 높이로」 — 8 은 홈 표시 줄까지 내려감)
+    public static var bottom: CGFloat { 21 }
     /// 막대가 차지하는 화면 아래 높이(내용 아래 여백 · + 자리 계산용)
     public static var reserved: CGFloat { height + bottom }
 
@@ -42,7 +43,7 @@ public struct DGitTabBar<ID: Hashable>: View {
             .glassEffect(.regular.interactive(), in: Capsule())
             .padding(.horizontal, Self.margin)
             .padding(.bottom, Self.bottom)
-            // 내리면 막대가 아래로 미끄러져 숨음(+ 와 같은 때 · 같은 움직임)
+            // 내리면 막대가 아래로 미끄러져 숨음(그 자리 오른쪽 끝에 + 가 뜸)
             .offset(y: state.hidden ? Self.reserved + 40 : 0)
             .opacity(state.hidden ? 0 : 1)
             .animation(.easeInOut(duration: 0.25), value: state.hidden)

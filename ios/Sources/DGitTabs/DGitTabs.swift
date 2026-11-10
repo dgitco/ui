@@ -2,9 +2,10 @@ import SwiftUI
 import UIKit
 
 /// 보더 · 콜스가 같이 쓰는 아래 탭 막대 규칙(Bobby 11/10 「보더 탭 정본 컴포넌트를 콜스도 같이 쓰게 — 따로 베끼지 말고」).
-/// 막대 자체는 시스템 TabView 막대(두 앱 높이 · 너비 · 모양이 같음). 이 패키지는 그 위의 움직임만 정함:
-/// - 내리면 막대와 + 가 함께 부드럽게 숨고, 올리거나 맨 위 가까이면 함께 나옴(Threads 처럼).
-/// - 화면을 밀어 연 동안(스레드 · 설정 상세)은 막대를 숨김.
+/// 움직임(Bobby 11/10 17:1x 바로잡음 — 「같이 숨기」가 아님):
+/// - 아래로 굴리면 막대가 아래로 숨고, 그 높이 오른쪽 끝에 + 가 생김.
+/// - 조금이라도 위로 올리면(또는 맨 위 가까이면) + 는 사라지고 막대가 다시 나옴.
+/// - 화면을 밀어 연 동안(스레드 · 설정 상세)은 막대도 + 도 숨김.
 @MainActor @Observable
 public final class TabBarState {
     /// 내려서 숨긴 상태
@@ -13,11 +14,13 @@ public final class TabBarState {
     public var pushed = 0
     public init() {}
 
-    /// 막대 · + 가 지금 숨었는지
+    /// 막대가 지금 숨었는지
     public var hidden: Bool { lowered || pushed > 0 }
+    /// + 가 보이는지 — 굴려서 막대가 숨은 동안만(밀어 연 화면에선 안 보임)
+    public var actionShown: Bool { lowered && pushed == 0 }
 
     /// 스크롤 위치(위에서부터 잰 내용 위치)가 old → new 로 바뀜. 맨 위 60pt 안이면 늘 보임.
-    /// 같은 방향으로 쌓인 거리가 12pt 를 넘어야 바뀜(천천히 내려도 결국 숨고, 숨긴 뒤 손 떨림 1~11pt 로는 안 나옴). 방향이 바뀌면 다시 셈.
+    /// 내려 쌓인 거리가 12pt 를 넘으면 숨김(천천히 내려도 결국 숨음), 위로는 3pt 만 넘어도 나옴(Bobby 「조금이라도 위로 올리면」 — 1~2pt 손 떨림은 그대로). 방향이 바뀌면 다시 셈.
     public func scrolled(from old: CGFloat, to new: CGFloat) {
         if new < Self.topZone { run = 0; set(false); return }
         let d = new - old
@@ -25,13 +28,14 @@ public final class TabBarState {
         if (d > 0) != (run > 0) { run = 0 }   // 방향이 바뀜
         run += d
         if run > Self.step { set(true); run = 0 }
-        else if run < -Self.step { set(false); run = 0 }
+        else if run < -Self.upStep { set(false); run = 0 }
     }
     /// 탭을 바꾸면 새 탭은 막대가 보이는 채로 시작
     public func reset() { run = 0; set(false) }
 
     public static let topZone: CGFloat = 60
     public static let step: CGFloat = 12
+    public static let upStep: CGFloat = 3
     private var run: CGFloat = 0
 
     private func set(_ v: Bool) { if lowered != v { withAnimation(.easeInOut(duration: 0.25)) { lowered = v } } }
@@ -55,7 +59,7 @@ public extension View {
     }
 }
 
-/// 막대 오른쪽 위의 둥근 + (보더 새 글 · 콜스 새 통화 등) — 막대와 함께 숨고 나옴.
+/// 둥근 + (보더 새 글 등) — 굴려서 막대가 숨은 동안만, 막대가 있던 높이 오른쪽 끝에 뜸. 위로 올려 막대가 나오면 사라짐.
 /// TabView 에 `.overlay(alignment: .bottomTrailing)` 로 얹음.
 public struct FloatingTabAction<Icon: View>: View {
     var state: TabBarState
@@ -69,25 +73,26 @@ public struct FloatingTabAction<Icon: View>: View {
         self.state = state; self.label = label; self.id = id; self.action = action; self.icon = icon
     }
 
-    /// 막대 위 자리: 오른쪽은 막대 끝과 맞춤, 아래는 막대 위 12
-    public static var trailing: CGFloat { DGitTabBar<Int>.margin + 6 }
-    public static var bottom: CGFloat { DGitTabBar<Int>.reserved + 12 }
+    public static var size: CGFloat { 56 }
+    /// 막대 자리: 오른쪽 끝은 막대 끝과 맞춤, 높이는 막대 가운데
+    public static var trailing: CGFloat { DGitTabBar<Int>.margin }
+    public static var bottom: CGFloat { DGitTabBar<Int>.bottom + (DGitTabBar<Int>.height - size) / 2 }
 
     public var body: some View {
         Group {
-            if !state.hidden {
+            if state.actionShown {
                 Button(action: action) {
-                    icon().frame(width: 60, height: 60).contentShape(Circle())
+                    icon().frame(width: Self.size, height: Self.size).contentShape(Circle())
                 }
                 .buttonStyle(.plain)
                 .glassEffect(.regular.tint(scheme == .dark ? Color.white.opacity(0.10) : nil).interactive(), in: Circle())
                 .accessibilityLabel(label).accessibilityIdentifier(id)
-                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .transition(.scale(scale: 0.6).combined(with: .opacity))
             }
         }
         .padding(.trailing, Self.trailing).padding(.bottom, Self.bottom)
         .ignoresSafeArea(.container, edges: .bottom)
-        .animation(.easeInOut(duration: 0.25), value: state.hidden)
+        .animation(.easeInOut(duration: 0.25), value: state.actionShown)
     }
 }
 
