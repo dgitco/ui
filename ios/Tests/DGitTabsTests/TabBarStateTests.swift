@@ -7,7 +7,7 @@ import Testing
     @Test func hidesOnScrollDownShowsOnUp() {
         let s = TabBarState()
         s.scrolled(from: 100, to: 120); #expect(s.hidden, "12pt 넘게 내리면 숨김")
-        s.scrolled(from: 120, to: 100); #expect(!s.hidden, "12pt 넘게 올리면 보임")
+        s.scrolled(from: 120, to: 119); #expect(!s.hidden, "위로는 1pt 만 올려도 보임(Bobby 「조금이라도」)")
     }
     @Test func slowScrollDownStillHides() {
         let s = TabBarState()
@@ -18,16 +18,23 @@ import Testing
     @Test func jitterDoesNotToggle() {
         let s = TabBarState()
         s.scrolled(from: 100, to: 104); s.scrolled(from: 104, to: 101); s.scrolled(from: 101, to: 105)
-        #expect(!s.hidden, "손 떨림은 그대로")
+        #expect(!s.hidden, "숨기 전 떨림은 그대로(내리기는 12pt 쌓여야)")
         s.scrolled(from: 105, to: 140); #expect(s.hidden)
-        s.scrolled(from: 140, to: 139); s.scrolled(from: 139, to: 141); s.scrolled(from: 141, to: 135)
-        #expect(s.hidden, "숨긴 뒤 작은 떨림(6pt)으로 안 나옴(리뷰)")
+        s.scrolled(from: 140, to: 139.6); #expect(s.hidden, "숨긴 뒤 1pt 보다 작은 떨림으로는 안 나옴")
+        s.scrolled(from: 139.6, to: 138.6); #expect(!s.hidden, "조금이라도(1pt) 위로 올리면 나옴(Bobby 11/10)")
     }
     @Test func nearTopAlwaysShows() {
         let s = TabBarState()
         s.scrolled(from: 100, to: 200); #expect(s.hidden)
         s.scrolled(from: 200, to: 40); #expect(!s.hidden, "맨 위 60pt 안이면 보임")
         s.scrolled(from: 40, to: 55); #expect(!s.hidden, "맨 위 근처에선 내려도 보임")
+    }
+    @Test func plusOnlyWhileLowered() {
+        let s = TabBarState()
+        #expect(!s.actionShown, "막대가 보일 땐 + 없음")
+        s.scrolled(from: 100, to: 130); #expect(s.hidden && s.actionShown, "내려 막대가 숨으면 + 가 뜸")
+        s.scrolled(from: 130, to: 129); #expect(!s.hidden && !s.actionShown, "1pt 올려도 + 는 사라지고 막대가 나옴")
+        s.scrolled(from: 126, to: 160); s.pushed = 1; #expect(!s.actionShown, "밀어 연 화면에선 + 없음")
     }
     @Test func pushedHides() {
         let s = TabBarState()

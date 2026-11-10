@@ -20,7 +20,8 @@ public struct DGitTabBar<ID: Hashable>: View {
 
     public static var margin: CGFloat { 15 }
     public static var height: CGFloat { 56 }
-    public static var bottom: CGFloat { 8 }
+    /// 화면 아래 끝에서 막대 아래까지 — 바꾸기 전 iOS 기본 탭 막대와 같은 21pt(Bobby 11/10 「원래 높이로」 — 8 은 홈 표시 줄까지 내려감)
+    public static var bottom: CGFloat { 21 }
     /// 막대가 차지하는 화면 아래 높이(내용 아래 여백 · + 자리 계산용)
     public static var reserved: CGFloat { height + bottom }
 
@@ -41,11 +42,14 @@ public struct DGitTabBar<ID: Hashable>: View {
             }
             .glassEffect(.regular.interactive(), in: Capsule())
             .padding(.horizontal, Self.margin)
-            .padding(.bottom, Self.bottom)
-            // 내리면 막대가 아래로 미끄러져 숨음(+ 와 같은 때 · 같은 움직임)
+            // 내리면 막대가 아래로 미끄러져 숨음(그 자리 오른쪽 끝에 + 가 뜸)
             .offset(y: state.hidden ? Self.reserved + 40 : 0)
             .opacity(state.hidden ? 0 : 1)
             .animation(.easeInOut(duration: 0.25), value: state.hidden)
+            // 자리는 화면 아래 끝에서 잼 — 화면을 채우는 틀 안 아래에 두고 그 틀이 안전 영역을 무시(높이가 정해진 막대에 바로 붙이면
+            // 놓인 자리에 따라 무시가 먹기도 안 먹기도 해 시뮬레이터 · 실기기 높이가 34pt 달랐음, Bobby 11/10 「너무 아래로」)
+            .padding(.bottom, Self.bottom)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             .ignoresSafeArea(.container, edges: .bottom)
             .ignoresSafeArea(.keyboard)   // 키보드가 떠도 화면 아래에 머묾(키보드 뒤로 가려짐)
     }
