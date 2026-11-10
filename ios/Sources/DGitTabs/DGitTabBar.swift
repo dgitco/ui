@@ -8,13 +8,13 @@ public struct DGitTabBar<ID: Hashable>: View {
     public struct Item: Identifiable {
         public var id: ID
         public var label: String
-        /// 고름 → 아이콘(채운 · 빈 아이콘, 또는 얼굴 그림)
-        public var icon: (Bool) -> Image
+        /// 고름 → 아이콘 화면(채운 · 빈 아이콘, 또는 얼굴 FaceTab) — 그림으로 굳히지 않음(굳히면 그릴 때마다 다시 그려 화면이 멈춤)
+        public var icon: (Bool) -> AnyView
         public var badge: Int
         /// 배지를 VoiceOver 로 읽을 말(예 콜스 「3 missed」, 보더 「안 읽음 3」) — 없으면 숫자
         public var badgeSpoken: ((Int) -> String)?
-        public init(id: ID, label: String, badge: Int = 0, badgeSpoken: ((Int) -> String)? = nil, icon: @escaping (Bool) -> Image) {
-            self.id = id; self.label = label; self.badge = badge; self.badgeSpoken = badgeSpoken; self.icon = icon
+        public init<V: View>(id: ID, label: String, badge: Int = 0, badgeSpoken: ((Int) -> String)? = nil, @ViewBuilder icon: @escaping (Bool) -> V) {
+            self.id = id; self.label = label; self.badge = badge; self.badgeSpoken = badgeSpoken; self.icon = { AnyView(icon($0)) }
         }
     }
 
@@ -34,6 +34,32 @@ public struct DGitTabBar<ID: Hashable>: View {
     public init(selection: Binding<ID>, items: [Item], state: TabBarState) { _selection = selection; self.items = items; self.state = state }
 
     public var body: some View {
+        GeometryReader { g in bar.contentShape(Capsule()).simultaneousGesture(drag(width: g.size.width)) }
+            .frame(height: Self.height)
+            .background {
+                if solid { Capsule().fill(Color(.secondarySystemBackground)) }
+            }
+            .glassEffect(.regular.interactive(), in: Capsule())
+            .padding(.horizontal, Self.margin)
+            .padding(.bottom, Self.bottom)
+            // 내리면 막대가 아래로 미끄러져 숨음(+ 와 같은 때 · 같은 움직임)
+            .offset(y: state.hidden ? Self.reserved + 40 : 0)
+            .opacity(state.hidden ? 0 : 1)
+            .animation(.easeInOut(duration: 0.25), value: state.hidden)
+            .ignoresSafeArea(.container, edges: .bottom)
+            .ignoresSafeArea(.keyboard)   // 키보드가 떠도 화면 아래에 머묾(키보드 뒤로 가려짐)
+    }
+
+    /// 막대를 따라 끌면 손가락 아래 탭으로(시스템 막대와 같음 — 보더에 있던 「끌어서 탭 바꾸기」)
+    private func drag(width: CGFloat) -> some Gesture {
+        DragGesture(minimumDistance: 12).onChanged { v in
+            guard !items.isEmpty, width > 0 else { return }
+            let i = min(items.count - 1, max(0, Int(v.location.x / (width / CGFloat(items.count)))))
+            if items[i].id != selection { withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) { selection = items[i].id } }
+        }
+    }
+
+    private var bar: some View {
         HStack(spacing: 0) {
             ForEach(items) { it in
                 let on = it.id == selection
@@ -66,19 +92,6 @@ public struct DGitTabBar<ID: Hashable>: View {
                 .accessibilityIdentifier("tab.\(String(describing: it.id))")
             }
         }
-        .frame(height: Self.height)
-        .background {
-            if solid { Capsule().fill(Color(.secondarySystemBackground)) }
-        }
-        .glassEffect(.regular.interactive(), in: Capsule())
-        .padding(.horizontal, Self.margin)
-        .padding(.bottom, Self.bottom)
-        // 내리면 막대가 아래로 미끄러져 숨음(+ 와 같은 때 · 같은 움직임)
-        .offset(y: state.hidden ? Self.reserved + 40 : 0)
-        .opacity(state.hidden ? 0 : 1)
-        .animation(.easeInOut(duration: 0.25), value: state.hidden)
-        .ignoresSafeArea(.container, edges: .bottom)
-        .ignoresSafeArea(.keyboard)   // 키보드가 떠도 화면 아래에 머묾(키보드 뒤로 가려짐)
     }
 }
 

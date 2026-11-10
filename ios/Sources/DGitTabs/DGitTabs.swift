@@ -91,20 +91,18 @@ public struct FloatingTabAction<Icon: View>: View {
     }
 }
 
-/// 오른쪽 끝 「나」 탭 아이콘 = 사용자 얼굴(Bobby 11/10 「설정 아이콘이 아니라 보더처럼 사용자 얼굴」).
-/// 앱이 그린 얼굴 화면을 탭 막대가 쓸 수 있는 그림으로 바꿈(시스템 막대는 그림 · 기호만 받음). 고른 탭이면 테두리.
-@MainActor
-public enum FaceTabIcon {
-    public static let size: CGFloat = 30
-    /// scheme = 지금 화면의 밝음 · 어두움 — 그림으로 굳히므로 그때 색으로 그림(어두운 화면에서 얼굴이 안 보이지 않게)
-    public static func image<Face: View>(_ face: Face, selected: Bool, scheme: ColorScheme) -> Image {
-        let v = face.frame(width: size, height: size)
+/// 오른쪽 끝 「나」 탭 아이콘 = 사용자 얼굴(Bobby 11/10 「설정 아이콘이 아니라 보더처럼 사용자 얼굴」). 고른 탭이면 테두리.
+/// 그림으로 굳히지 않고 화면 그대로(ImageRenderer 로 굳히면 막대를 그릴 때마다 다시 그려 화면이 멈춤 — 보더 앱 시험에서 드러남).
+public struct FaceTab<Face: View>: View {
+    public static var size: CGFloat { 30 }
+    var selected: Bool
+    var face: Face
+    public init(selected: Bool, @ViewBuilder face: () -> Face) { self.selected = selected; self.face = face() }
+    public var body: some View {
+        face.frame(width: Self.size, height: Self.size)
             .clipShape(Circle())
             .overlay(Circle().stroke(selected ? Color.primary : Color.clear, lineWidth: 2))
-            .frame(width: size + 4, height: size + 4)
-            .environment(\.colorScheme, scheme)
-        let r = ImageRenderer(content: v); r.scale = UITraitCollection.current.displayScale
-        guard let ui = r.uiImage else { return Image(systemName: "person.crop.circle") }
-        return Image(uiImage: ui.withRenderingMode(.alwaysOriginal))
+            .frame(width: Self.size + 4, height: Self.size + 4)
+            .accessibilityHidden(true)
     }
 }
