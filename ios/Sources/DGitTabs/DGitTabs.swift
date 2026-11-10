@@ -20,7 +20,7 @@ public final class TabBarState {
     public var actionShown: Bool { lowered && pushed == 0 }
 
     /// 스크롤 위치(위에서부터 잰 내용 위치)가 old → new 로 바뀜. 맨 위 60pt 안이면 늘 보임.
-    /// 내려 쌓인 거리가 12pt 를 넘으면 숨김(천천히 내려도 결국 숨음), 위로는 3pt 만 넘어도 나옴(Bobby 「조금이라도 위로 올리면」 — 1~2pt 손 떨림은 그대로). 방향이 바뀌면 다시 셈.
+    /// 내려 쌓인 거리가 12pt 를 넘으면 숨김(천천히 내려도 결국 숨음), 위로는 1pt 만 올려도 나옴(Bobby 「조금이라도 위로 올리면」 — 1pt 보다 작은 화면 떨림만 거름). 방향이 바뀌면 다시 셈.
     public func scrolled(from old: CGFloat, to new: CGFloat) {
         if new < Self.topZone { run = 0; set(false); return }
         let d = new - old
@@ -28,14 +28,14 @@ public final class TabBarState {
         if (d > 0) != (run > 0) { run = 0 }   // 방향이 바뀜
         run += d
         if run > Self.step { set(true); run = 0 }
-        else if run < -Self.upStep { set(false); run = 0 }
+        else if run <= -Self.upStep { set(false); run = 0 }
     }
     /// 탭을 바꾸면 새 탭은 막대가 보이는 채로 시작
     public func reset() { run = 0; set(false) }
 
     public static let topZone: CGFloat = 60
     public static let step: CGFloat = 12
-    public static let upStep: CGFloat = 3
+    public static let upStep: CGFloat = 1
     private var run: CGFloat = 0
 
     private func set(_ v: Bool) { if lowered != v { withAnimation(.easeInOut(duration: 0.25)) { lowered = v } } }
