@@ -91,7 +91,9 @@ public struct FloatingTabAction<Icon: View>: View {
             }
         }
         .padding(.trailing, Self.trailing).padding(.bottom, Self.bottom)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)   // 막대와 같은 꼴로 화면 아래 끝에서 잼
         .ignoresSafeArea(.container, edges: .bottom)
+        .ignoresSafeArea(.keyboard)
         .animation(.easeInOut(duration: 0.25), value: state.actionShown)
     }
 }

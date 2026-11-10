@@ -42,11 +42,14 @@ public struct DGitTabBar<ID: Hashable>: View {
             }
             .glassEffect(.regular.interactive(), in: Capsule())
             .padding(.horizontal, Self.margin)
-            .padding(.bottom, Self.bottom)
             // 내리면 막대가 아래로 미끄러져 숨음(그 자리 오른쪽 끝에 + 가 뜸)
             .offset(y: state.hidden ? Self.reserved + 40 : 0)
             .opacity(state.hidden ? 0 : 1)
             .animation(.easeInOut(duration: 0.25), value: state.hidden)
+            // 자리는 화면 아래 끝에서 잼 — 화면을 채우는 틀 안 아래에 두고 그 틀이 안전 영역을 무시(높이가 정해진 막대에 바로 붙이면
+            // 놓인 자리에 따라 무시가 먹기도 안 먹기도 해 시뮬레이터 · 실기기 높이가 34pt 달랐음, Bobby 11/10 「너무 아래로」)
+            .padding(.bottom, Self.bottom)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             .ignoresSafeArea(.container, edges: .bottom)
             .ignoresSafeArea(.keyboard)   // 키보드가 떠도 화면 아래에 머묾(키보드 뒤로 가려짐)
     }
